@@ -1,4 +1,24 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+session_start();
+require_once(__DIR__ . "/../functions/authentication.php");
+
+
+if (isset($_POST["register"])) {
+    $result = register($_POST);
+    if ($result) {
+        echo "<script>
+    alert('Sign up berhasil.');
+    document.location.href = 'login.php';
+    </script>";
+    }
+}
+
+if (isLogged()) {
+    header("Location:../index.php");
+}
+
 $projectRoot = dirname(__DIR__);
 include($projectRoot . '/templates/header.php');
 ?>
@@ -10,10 +30,10 @@ include($projectRoot . '/templates/header.php');
 
     <div class="form-container">
 
-        <form action="" method="POST">
+        <form method="POST">
 
             <div class="input-group">
-                <input type="text" name="nama" placeholder="Nama Lengkap" required>
+                <input type="text" name="name" placeholder="Nama Lengkap" required>
             </div>
 
             <div class="input-group">
@@ -26,11 +46,12 @@ include($projectRoot . '/templates/header.php');
             </div>
 
             <div class="input-group password-wrapper">
-                <input type="confirmPassword" name="confirmPassword" id="confirmPassword" placeholder="Konfirmasi Password" required>
-                <i class="fa-solid fa-eye" id="togglePassword"></i>
+                <input type="password" name="confirmpassword" id="confirmpassword" placeholder="Konfirmasi Password"
+                    required>
+                <i class="fa-solid fa-eye" id="toggleConfirmPassword"></i>
             </div>
 
-            <button type="submit" class="auth-button">Daftar</button>
+            <button type="submit" class="auth-button" name="register" id="register">Daftar</button>
 
         </form>
 

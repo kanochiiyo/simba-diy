@@ -3,11 +3,30 @@ document.addEventListener("DOMContentLoaded", function () {
   const togglePassword = document.getElementById("togglePassword");
   const password = document.getElementById("password");
 
+  const toggleConfirmPassword = document.getElementById(
+    "toggleConfirmPassword"
+  );
+  const confirmpassword = document.getElementById("confirmpassword");
+
+  // Toggle untuk password utama
   if (togglePassword && password) {
     togglePassword.addEventListener("click", function () {
       const type =
         password.getAttribute("type") === "password" ? "text" : "password";
       password.setAttribute("type", type);
+      this.classList.toggle("fa-eye");
+      this.classList.toggle("fa-eye-slash");
+    });
+  }
+
+  // Toggle untuk confirm password
+  if (toggleConfirmPassword && confirmpassword) {
+    toggleConfirmPassword.addEventListener("click", function () {
+      const type =
+        confirmpassword.getAttribute("type") === "password"
+          ? "text"
+          : "password";
+      confirmpassword.setAttribute("type", type);
       this.classList.toggle("fa-eye");
       this.classList.toggle("fa-eye-slash");
     });
