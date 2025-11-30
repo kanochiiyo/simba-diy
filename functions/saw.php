@@ -1,9 +1,113 @@
 <?php
 require_once(__DIR__ . "/connection.php");
 
-/**
- * Fungsi untuk menghitung nilai SAW untuk semua pengajuan yang terverifikasi
- */
+define('KRITERIA', [
+    'gaji' => [
+        'nama' => 'Penghasilan',
+        'type' => 'cost',
+        'weight' => 0.30,
+        'satuan' => 'Rupiah'
+    ],
+    'status_rumah' => [
+        'nama' => 'Kepemilikan Rumah',
+        'type' => 'cost',
+        'weight' => 0.15,
+        'satuan' => 'Kategori'
+    ],
+    'daya_listrik' => [
+        'nama' => 'Kelistrikan',
+        'type' => 'cost',
+        'weight' => 0.10,
+        'satuan' => 'Status'
+    ],
+    'pengeluaran' => [
+        'nama' => 'Pengeluaran',
+        'type' => 'cost',
+        'weight' => 0.20,
+        'satuan' => 'Rupiah'
+    ],
+    'jml_keluarga' => [
+        'nama' => 'Jumlah Anggota Keluarga',
+        'type' => 'benefit',
+        'weight' => 0.15,
+        'satuan' => 'Orang'
+    ],
+    'jml_anak_sekolah' => [
+        'nama' => 'Keberadaan Anak Usia Sekolah',
+        'type' => 'benefit',
+        'weight' => 0.10,
+        'satuan' => 'Anak'
+    ]
+]);
+
+// Tabel Kriteria Pendapatan (Cost)
+define('KONVERSI_PENDAPATAN', [
+    ['min' => 0, 'max' => 1000000, 'nilai' => 5],
+    ['min' => 1000000, 'max' => 2000000, 'nilai' => 4],
+    ['min' => 2000000, 'max' => 3500000, 'nilai' => 3],
+    ['min' => 3500000, 'max' => PHP_INT_MAX, 'nilai' => 2]
+]);
+
+// Tabel Kriteria Kelistrikan (Cost)
+define('KONVERSI_KELISTRIKAN', [
+    'Menumpang' => 5,
+    'Pribadi 450 Watt' => 4,
+    'Pribadi 900 Watt' => 3,
+    'Pribadi 1200 Watt' => 2,
+    'Pribadi > 1200 Watt' => 1
+]);
+
+// Tabel Kriteria Kepemilikan Rumah (Cost)
+define('KONVERSI_KEPEMILIKAN_RUMAH', [
+    'Sewa' => 5,
+    'Keluarga' => 3,
+    'Pribadi' => 1
+]);
+
+// Tabel Kriteria Pengeluaran (Cost)
+define('KONVERSI_PENGELUARAN', [
+    ['min' => 0, 'max' => 1000000, 'nilai' => 2],
+    ['min' => 1000000, 'max' => 2000000, 'nilai' => 3],
+    ['min' => 2000000, 'max' => 3500000, 'nilai' => 4],
+    ['min' => 3500000, 'max' => PHP_INT_MAX, 'nilai' => 5]
+]);
+
+// Tabel Kriteria Jumlah Anggota Keluarga (Benefit)
+define('KONVERSI_JUMLAH_KELUARGA', [
+    ['min' => 1, 'max' => 2, 'nilai' => 1],
+    ['min' => 3, 'max' => 3, 'nilai' => 2],
+    ['min' => 4, 'max' => 4, 'nilai' => 3],
+    ['min' => 5, 'max' => 5, 'nilai' => 4],
+    ['min' => 6, 'max' => PHP_INT_MAX, 'nilai' => 5]
+]);
+
+// Tabel Keberadaan Anak Usia Sekolah (Benefit)
+define('KONVERSI_ANAK_SEKOLAH', [
+    0 => 1,
+    1 => 2,
+    2 => 3,
+    3 => 4,
+    4 => 5  // 4 atau lebih
+]);
+
+function konversiNilaiRange($nilai, $konversiArray)
+{
+    foreach ($konversiArray as $range) {
+        if ($nilai >= $range['min'] && $nilai <= $range['max']) {
+            return $range['nilai'];
+        }
+    }
+    return 1; // Default jika tidak ada yang cocok
+}
+
+function konversiAnakSekolah($jumlah)
+{
+    if ($jumlah >= 4) {
+        return 5;
+    }
+    return KONVERSI_ANAK_SEKOLAH[$jumlah] ?? 1;
+}
+
 function calculateSAW()
 {
     $connection = getConnection();
@@ -18,63 +122,48 @@ function calculateSAW()
 
     $pengajuanData = $result->fetch_all(MYSQLI_ASSOC);
 
-    // Definisi kriteria sesuai dengan penelitian
-    $kriteria = [
-        'gaji' => ['type' => 'cost', 'weight' => 0.25],
-        'status_rumah' => ['type' => 'cost', 'weight' => 0.15],
-        'daya_listrik' => ['type' => 'cost', 'weight' => 0.15],
-        'pengeluaran' => ['type' => 'cost', 'weight' => 0.20],
-        'jml_keluarga' => ['type' => 'benefit', 'weight' => 0.15],
-        'jml_anak_sekolah' => ['type' => 'benefit', 'weight' => 0.10]
-    ];
+    // STEP 1: Konversi nilai mentah ke nilai kriteria (1-5)
+    $dataTerkonversi = [];
+    foreach ($pengajuanData as $data) {
+        $converted = [
+            'id_pengajuan' => $data['id'],
+            'gaji' => konversiNilaiRange($data['gaji'], KONVERSI_PENDAPATAN),
+            'status_rumah' => KONVERSI_KEPEMILIKAN_RUMAH[$data['status_rumah']] ?? 1,
+            'daya_listrik' => KONVERSI_KELISTRIKAN[$data['daya_listrik']] ?? 1,
+            'pengeluaran' => konversiNilaiRange($data['pengeluaran'], KONVERSI_PENGELUARAN),
+            'jml_keluarga' => konversiNilaiRange($data['jml_keluarga'], KONVERSI_JUMLAH_KELUARGA),
+            'jml_anak_sekolah' => konversiAnakSekolah($data['jml_anak_sekolah'])
+        ];
+        $dataTerkonversi[] = $converted;
+    }
 
-    // Konversi nilai untuk kriteria kategorikal
-    $konversiStatusRumah = [
-        'Menumpang' => 5,
-        'Sewa' => 4,
-        'Lainnya' => 3,
-        'Milik Sendiri' => 1
-    ];
-
-    // Step 1: Konversi nilai dan normalisasi
-    $dataNormalisasi = [];
+    // STEP 2: Hitung nilai min dan max untuk normalisasi
     $nilaiMax = [];
     $nilaiMin = [];
 
-    // Hitung nilai min dan max untuk setiap kriteria
-    foreach ($kriteria as $key => $info) {
-        $values = [];
-        foreach ($pengajuanData as $data) {
-            if ($key == 'status_rumah') {
-                $nilai = $konversiStatusRumah[$data[$key]] ?? 1;
-            } else {
-                $nilai = floatval($data[$key]);
-            }
-            $values[] = $nilai;
-        }
+    foreach (array_keys(KRITERIA) as $key) {
+        $values = array_column($dataTerkonversi, $key);
 
-        if ($info['type'] == 'benefit') {
+        if (KRITERIA[$key]['type'] == 'benefit') {
             $nilaiMax[$key] = max($values);
         } else {
             $nilaiMin[$key] = min($values);
         }
     }
 
-    // Normalisasi setiap data
-    foreach ($pengajuanData as $index => $data) {
-        $normalized = ['id_pengajuan' => $data['id']];
+    // STEP 3: Normalisasi setiap data
+    $dataNormalisasi = [];
+    foreach ($dataTerkonversi as $data) {
+        $normalized = ['id_pengajuan' => $data['id_pengajuan']];
 
-        foreach ($kriteria as $key => $info) {
-            if ($key == 'status_rumah') {
-                $nilai = $konversiStatusRumah[$data[$key]] ?? 1;
-            } else {
-                $nilai = floatval($data[$key]);
-            }
+        foreach (array_keys(KRITERIA) as $key) {
+            $nilai = $data[$key];
+            $kriteria = KRITERIA[$key];
 
             // Normalisasi sesuai tipe kriteria
-            if ($info['type'] == 'benefit') {
+            if ($kriteria['type'] == 'benefit') {
                 // Untuk benefit: nilai / nilai_max
-                $normalized[$key] = $nilai / $nilaiMax[$key];
+                $normalized[$key] = $nilaiMax[$key] > 0 ? $nilai / $nilaiMax[$key] : 0;
             } else {
                 // Untuk cost: nilai_min / nilai
                 $normalized[$key] = $nilai > 0 ? $nilaiMin[$key] / $nilai : 0;
@@ -84,13 +173,13 @@ function calculateSAW()
         $dataNormalisasi[] = $normalized;
     }
 
-    // Step 2: Hitung skor total dengan bobot
+    // STEP 4: Hitung skor total dengan bobot
     $hasilAkhir = [];
     foreach ($dataNormalisasi as $data) {
         $skorTotal = 0;
 
-        foreach ($kriteria as $key => $info) {
-            $skorTotal += $data[$key] * $info['weight'];
+        foreach (array_keys(KRITERIA) as $key) {
+            $skorTotal += $data[$key] * KRITERIA[$key]['weight'];
         }
 
         $hasilAkhir[] = [
@@ -99,17 +188,18 @@ function calculateSAW()
         ];
     }
 
-    // Step 3: Sort berdasarkan skor (descending)
+    // STEP 5: Sort berdasarkan skor (descending)
     usort($hasilAkhir, function ($a, $b) {
         return $b['skor_total'] <=> $a['skor_total'];
     });
 
-    // Step 4: Assign peringkat
+    // STEP 6: Assign peringkat
     foreach ($hasilAkhir as $index => &$hasil) {
         $hasil['peringkat'] = $index + 1;
     }
 
-    // Step 5: Simpan ke database
+    // STEP 7: Simpan ke database
+
     // Hapus data lama
     $connection->query("DELETE FROM total_nilai");
 
@@ -126,9 +216,7 @@ function calculateSAW()
     return true;
 }
 
-/**
- * Fungsi untuk mendapatkan detail perhitungan SAW untuk satu pengajuan
- */
+
 function getSAWDetails($id_pengajuan)
 {
     $connection = getConnection();
@@ -142,9 +230,6 @@ function getSAWDetails($id_pengajuan)
     return $result->fetch_assoc();
 }
 
-/**
- * Fungsi untuk mendapatkan nilai kriteria individual dari pengajuan
- */
 function getKriteriaNilai($id_pengajuan)
 {
     $connection = getConnection();
@@ -157,51 +242,60 @@ function getKriteriaNilai($id_pengajuan)
         return null;
     }
 
-    // Konversi status rumah
-    $konversiStatusRumah = [
-        'Menumpang' => 5,
-        'Sewa' => 4,
-        'Lainnya' => 3,
-        'Milik Sendiri' => 1
-    ];
+    // Helper function untuk format label gaji/pengeluaran
+    $formatRupiah = function ($nilai) {
+        if ($nilai < 1000000) return '< Rp 1.000.000';
+        if ($nilai < 2000000) return 'Rp 1.000.000 - Rp 1.999.000';
+        if ($nilai < 3500000) return 'Rp 2.000.000 - Rp 3.500.000';
+        return '> Rp 3.500.000';
+    };
 
     return [
         'Penghasilan' => [
-            'nilai' => $data['gaji'],
+            'nilai_asli' => $data['gaji'],
+            'nilai_konversi' => konversiNilaiRange($data['gaji'], KONVERSI_PENDAPATAN),
             'tipe' => 'Cost',
-            'keterangan' => 'Rp ' . number_format($data['gaji'], 0, ',', '.')
+            'bobot' => KRITERIA['gaji']['weight'],
+            'keterangan' => $formatRupiah($data['gaji'])
         ],
-        'Status Rumah' => [
-            'nilai' => $konversiStatusRumah[$data['status_rumah']] ?? 1,
+        'Kepemilikan Rumah' => [
+            'nilai_asli' => $data['status_rumah'],
+            'nilai_konversi' => KONVERSI_KEPEMILIKAN_RUMAH[$data['status_rumah']] ?? 1,
             'tipe' => 'Cost',
+            'bobot' => KRITERIA['status_rumah']['weight'],
             'keterangan' => $data['status_rumah']
         ],
-        'Daya Listrik' => [
-            'nilai' => $data['daya_listrik'],
+        'Kelistrikan' => [
+            'nilai_asli' => $data['daya_listrik'],
+            'nilai_konversi' => KONVERSI_KELISTRIKAN[$data['daya_listrik']] ?? 1,
             'tipe' => 'Cost',
-            'keterangan' => $data['daya_listrik'] . ' VA'
+            'bobot' => KRITERIA['daya_listrik']['weight'],
+            'keterangan' => $data['daya_listrik']
         ],
         'Pengeluaran' => [
-            'nilai' => $data['pengeluaran'],
+            'nilai_asli' => $data['pengeluaran'],
+            'nilai_konversi' => konversiNilaiRange($data['pengeluaran'], KONVERSI_PENGELUARAN),
             'tipe' => 'Cost',
-            'keterangan' => 'Rp ' . number_format($data['pengeluaran'], 0, ',', '.')
+            'bobot' => KRITERIA['pengeluaran']['weight'],
+            'keterangan' => $formatRupiah($data['pengeluaran'])
         ],
-        'Jumlah Keluarga' => [
-            'nilai' => $data['jml_keluarga'],
+        'Jumlah Anggota Keluarga' => [
+            'nilai_asli' => $data['jml_keluarga'],
+            'nilai_konversi' => konversiNilaiRange($data['jml_keluarga'], KONVERSI_JUMLAH_KELUARGA),
             'tipe' => 'Benefit',
+            'bobot' => KRITERIA['jml_keluarga']['weight'],
             'keterangan' => $data['jml_keluarga'] . ' orang'
         ],
-        'Anak Usia Sekolah' => [
-            'nilai' => $data['jml_anak_sekolah'],
+        'Keberadaan Anak Usia Sekolah' => [
+            'nilai_asli' => $data['jml_anak_sekolah'],
+            'nilai_konversi' => konversiAnakSekolah($data['jml_anak_sekolah']),
             'tipe' => 'Benefit',
+            'bobot' => KRITERIA['jml_anak_sekolah']['weight'],
             'keterangan' => $data['jml_anak_sekolah'] . ' anak'
         ]
     ];
 }
 
-/**
- * Fungsi untuk mendapatkan statistik perhitungan SAW
- */
 function getSAWStatistics()
 {
     $connection = getConnection();
@@ -214,31 +308,26 @@ function getSAWStatistics()
 
     // Skor tertinggi
     $result = $connection->query("SELECT MAX(skor_total) as max_skor FROM total_nilai");
-    $stats['skor_tertinggi'] = $result->fetch_assoc()['max_skor'];
+    $stats['skor_tertinggi'] = $result->fetch_assoc()['max_skor'] ?? 0;
 
     // Skor terendah
     $result = $connection->query("SELECT MIN(skor_total) as min_skor FROM total_nilai");
-    $stats['skor_terendah'] = $result->fetch_assoc()['min_skor'];
+    $stats['skor_terendah'] = $result->fetch_assoc()['min_skor'] ?? 0;
 
     // Rata-rata skor
     $result = $connection->query("SELECT AVG(skor_total) as avg_skor FROM total_nilai");
-    $stats['rata_rata'] = $result->fetch_assoc()['avg_skor'];
+    $stats['rata_rata'] = $result->fetch_assoc()['avg_skor'] ?? 0;
 
     return $stats;
 }
 
-/**
- * Fungsi untuk trigger perhitungan SAW ketika status pengajuan berubah menjadi Terverifikasi
- */
 function autoCalculateSAW($id_pengajuan)
 {
-    // Cek apakah pengajuan terverifikasi
     $connection = getConnection();
     $result = $connection->query("SELECT status FROM pengajuan WHERE id = '$id_pengajuan'");
     $data = $result->fetch_assoc();
 
     if ($data && $data['status'] == 'Terverifikasi') {
-        // Trigger recalculation untuk semua data
         return calculateSAW();
     }
 

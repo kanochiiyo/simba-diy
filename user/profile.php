@@ -14,8 +14,8 @@ if (!isLogged() || isAdmin()) {
 $id_user = $_SESSION['id'];
 $connection = getConnection();
 
-// Get user data
-$query = "SELECT * FROM user WHERE id = '$id_user'";
+// Fetch user data
+$query = "SELECT * FROM user WHERE id = " . intval($id_user);
 $result = $connection->query($query);
 $userData = $result->fetch_assoc();
 
@@ -24,9 +24,9 @@ $error = '';
 
 // Handle profile update
 if (isset($_POST['update_profile'])) {
-    $nama = mysqli_real_escape_string($connection, $_POST['nama']);
+    $nama = mysqli_real_escape_string($connection, trim($_POST['nama']));
 
-    $updateQuery = "UPDATE user SET nama = '$nama' WHERE id = '$id_user'";
+    $updateQuery = "UPDATE user SET nama = '$nama' WHERE id = " . intval($id_user);
 
     if ($connection->query($updateQuery)) {
         $success = 'Profil berhasil diperbarui!';
@@ -34,7 +34,7 @@ if (isset($_POST['update_profile'])) {
         $result = $connection->query($query);
         $userData = $result->fetch_assoc();
     } else {
-        $error = 'Gagal memperbarui profil.';
+        $error = 'Gagal memperbarui profil: ' . $connection->error;
     }
 }
 
@@ -48,12 +48,15 @@ if (isset($_POST['change_password'])) {
         if ($new_password === $confirm_password) {
             if (strlen($new_password) >= 6) {
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $updateQuery = "UPDATE user SET password = '$hashed_password' WHERE id = '$id_user'";
+                $updateQuery = "UPDATE user SET password = '$hashed_password' WHERE id = " . intval($id_user);
 
                 if ($connection->query($updateQuery)) {
                     $success = 'Password berhasil diubah!';
+                    // Refresh user data
+                    $result = $connection->query($query);
+                    $userData = $result->fetch_assoc();
                 } else {
-                    $error = 'Gagal mengubah password.';
+                    $error = 'Gagal mengubah password: ' . $connection->error;
                 }
             } else {
                 $error = 'Password baru minimal 6 karakter!';
@@ -95,19 +98,19 @@ if (isset($_POST['change_password'])) {
             <?php if ($success): ?>
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i>
-                    <div><?php echo $success; ?></div>
+                    <div><?php echo htmlspecialchars($success); ?></div>
                 </div>
             <?php endif; ?>
 
             <?php if ($error): ?>
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-circle"></i>
-                    <div><?php echo $error; ?></div>
+                    <div><?php echo htmlspecialchars($error); ?></div>
                 </div>
             <?php endif; ?>
 
             <div class="row g-4">
-                <!-- Profile Card -->
+                <!-- Profile Card - FIXED WITH SAFE ACCESS -->
                 <div class="col-lg-4">
                     <div class="form-card">
                         <div style="text-align: center;">
@@ -126,7 +129,18 @@ if (isset($_POST['change_password'])) {
                                 <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Role</div>
                                 <div style="font-size: 16px; font-weight: 600; color: var(--color-text);">
                                     <i class="fas fa-user" style="color: var(--color-primary); margin-right: 6px;"></i>
-                                    <?php echo ucfirst($userData['role']); ?>
+                                    <?php
+
+                                    // Fetch user data
+                                    $query = "SELECT * FROM user WHERE id = " . intval($id_user);
+                                    $result = $connection->query($query);
+                                    $userData = $result->fetch_assoc();
+                                    if ($userData['role'] == "user") {
+                                        echo "Pengguna";
+                                    } else {
+                                        echo ucfirst($userData['role']);
+                                    }
+                                    ?>
                                 </div>
                             </div>
 
@@ -134,7 +148,15 @@ if (isset($_POST['change_password'])) {
                                 <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Bergabung Sejak</div>
                                 <div style="font-size: 14px; font-weight: 600; color: var(--color-text);">
                                     <i class="fas fa-calendar" style="color: var(--color-primary); margin-right: 6px;"></i>
-                                    <?php echo date('d F Y', strtotime($userData['created_at'])); ?>
+                                    <?php
+                                    // Format date dengan aman
+                                    $timestamp = strtotime($userData['created_at']);
+                                    if ($timestamp === false || $timestamp <= 0) {
+                                        echo "Tidak tersedia";
+                                    } else {
+                                        echo date('d F Y', $timestamp);
+                                    }
+                                    ?>
                                 </div>
                             </div>
                         </div>

@@ -1,107 +1,118 @@
 -- Database: simba
+-- Created: 2025
+-- Description: Sistem Informasi Bantuan Sosial DIY dengan Metode SAW
 
--- Tabel user
+-- Buat database baru
+CREATE DATABASE IF NOT EXISTS `simba` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `simba`;
+
+-- ============================================================
+-- TABEL 1: user
+-- Menyimpan data pengguna (admin dan user)
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nama` varchar(255) NOT NULL,
-  `nik` char(16) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `role` enum('admin','user') NOT NULL DEFAULT 'user',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `nama` varchar(255) NOT NULL COMMENT 'Nama lengkap pengguna',
+  `nik` char(16) NOT NULL COMMENT 'NIK 16 digit',
+  `password` varchar(255) NOT NULL COMMENT 'Password terenkripsi',
+  `role` enum('admin','user') NOT NULL DEFAULT 'user' COMMENT 'Role pengguna',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal registrasi',
   PRIMARY KEY (`id`),
   UNIQUE KEY `nik` (`nik`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel pengguna sistem';
 
--- Tabel pengajuan
+-- Insert default admin account
+-- Password: admin123 (ganti setelah first login!)
+INSERT INTO `user` (`nama`, `nik`, `password`, `role`) VALUES
+('Administrator', '1234567890123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+
+-- ============================================================
+-- TABEL 2: pengajuan
+-- Menyimpan data pengajuan bantuan sosial
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `pengajuan` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_user` int(11) NOT NULL,
-  `nik` varchar(16) NOT NULL,
-  `no_kk` varchar(16) NOT NULL,
-  `nama_lengkap` varchar(255) NOT NULL,
-  `alamat` text NOT NULL,
-  `no_hp` varchar(15) NOT NULL,
-  `gaji` decimal(15,2) NOT NULL,
-  `status_rumah` enum('Milik Sendiri','Sewa','Menumpang','Lainnya') NOT NULL,
-  `daya_listrik` int(11) NOT NULL,
-  `pengeluaran` decimal(15,2) NOT NULL,
-  `jml_keluarga` int(11) NOT NULL,
-  `jml_anak_sekolah` int(11) NOT NULL,
-  `status` enum('Menunggu Verifikasi','Sedang Diverifikasi','Terverifikasi','Ditolak') NOT NULL DEFAULT 'Menunggu Verifikasi',
-  `tanggal_dibuat` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id_user` int(11) NOT NULL COMMENT 'Foreign key ke tabel user',
+  `nik` varchar(16) NOT NULL COMMENT 'NIK pemohon',
+  `no_kk` varchar(16) NOT NULL COMMENT 'Nomor Kartu Keluarga',
+  `nama_lengkap` varchar(255) NOT NULL COMMENT 'Nama lengkap pemohon',
+  `alamat` text NOT NULL COMMENT 'Alamat lengkap',
+  `no_hp` varchar(15) NOT NULL COMMENT 'Nomor HP yang bisa dihubungi',
+  
+  -- Kriteria SAW (disimpan sebagai nilai mentah untuk tracking)
+  `gaji` decimal(15,2) NOT NULL COMMENT 'Penghasilan per bulan (nilai tengah range)',
+  `status_rumah` varchar(50) NOT NULL COMMENT 'Kepemilikan rumah: Sewa, Keluarga, Pribadi',
+  `daya_listrik` varchar(50) NOT NULL COMMENT 'Kelistrikan: Menumpang, Pribadi 450 Watt, dst',
+  `pengeluaran` decimal(15,2) NOT NULL COMMENT 'Pengeluaran per bulan (nilai tengah range)',
+  `jml_keluarga` int(11) NOT NULL COMMENT 'Jumlah anggota keluarga (nilai representatif)',
+  `jml_anak_sekolah` int(11) NOT NULL COMMENT 'Jumlah anak usia sekolah (5-18 tahun)',
+  
+  `status` enum('Menunggu Verifikasi','Sedang Diverifikasi','Terverifikasi','Ditolak') NOT NULL DEFAULT 'Menunggu Verifikasi' COMMENT 'Status pengajuan',
+  `tanggal_dibuat` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu pengajuan dibuat',
+  
   PRIMARY KEY (`id`),
   KEY `id_user` (`id_user`),
+  KEY `status` (`status`),
   CONSTRAINT `pengajuan_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel pengajuan bantuan sosial';
 
--- Tabel dokumen
+-- ============================================================
+-- TABEL 3: dokumen
+-- Menyimpan file dokumen pendukung pengajuan
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `dokumen` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_pengajuan` int(11) NOT NULL,
-  `ktp` varchar(255) DEFAULT NULL,
-  `kk` varchar(255) DEFAULT NULL,
-  `slip_gaji` varchar(255) DEFAULT NULL,
-  `foto_rumah` varchar(255) DEFAULT NULL,
-  `surat_keterangan_rumah` varchar(255) DEFAULT NULL,
-  `rekening_listrik` varchar(255) DEFAULT NULL,
-  `daftar_pengeluaran` varchar(255) DEFAULT NULL,
-  `kartu_pelajar_anak` varchar(255) DEFAULT NULL,
+  `id_pengajuan` int(11) NOT NULL COMMENT 'Foreign key ke tabel pengajuan',
+  
+  -- Dokumen Wajib
+  `ktp` varchar(255) DEFAULT NULL COMMENT 'File KTP (WAJIB)',
+  `kk` varchar(255) DEFAULT NULL COMMENT 'File Kartu Keluarga (WAJIB)',
+  
+  -- Dokumen Opsional
+  `slip_gaji` varchar(255) DEFAULT NULL COMMENT 'File slip gaji / bukti penghasilan',
+  `foto_rumah` varchar(255) DEFAULT NULL COMMENT 'Foto rumah tampak depan',
+  `surat_keterangan_rumah` varchar(255) DEFAULT NULL COMMENT 'Surat keterangan kepemilikan rumah',
+  `rekening_listrik` varchar(255) DEFAULT NULL COMMENT 'Rekening listrik bulan terakhir',
+  `daftar_pengeluaran` varchar(255) DEFAULT NULL COMMENT 'Daftar pengeluaran bulanan',
+  `kartu_pelajar_anak` varchar(255) DEFAULT NULL COMMENT 'Kartu pelajar anak (jika ada)',
+  
   PRIMARY KEY (`id`),
   KEY `id_pengajuan` (`id_pengajuan`),
   CONSTRAINT `dokumen_ibfk_1` FOREIGN KEY (`id_pengajuan`) REFERENCES `pengajuan` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel dokumen pendukung';
 
--- Tabel verifikasi
+-- ============================================================
+-- TABEL 4: verifikasi
+-- Menyimpan hasil verifikasi oleh petugas/admin
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `verifikasi` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_pengajuan` int(11) NOT NULL,
-  `id_petugas` int(11) NOT NULL,
-  `tanggal` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `status` enum('Layak','Tidak Layak','Perlu Perbaikan') NOT NULL,
-  `catatan` text,
+  `id_pengajuan` int(11) NOT NULL COMMENT 'Foreign key ke tabel pengajuan',
+  `id_petugas` int(11) NOT NULL COMMENT 'Foreign key ke tabel user (admin)',
+  `tanggal` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu verifikasi',
+  `status` enum('Layak','Tidak Layak','Perlu Perbaikan') NOT NULL COMMENT 'Hasil verifikasi',
+  `catatan` text COMMENT 'Catatan dari petugas verifikasi',
+  
   PRIMARY KEY (`id`),
   KEY `id_pengajuan` (`id_pengajuan`),
   KEY `id_petugas` (`id_petugas`),
   CONSTRAINT `verifikasi_ibfk_1` FOREIGN KEY (`id_pengajuan`) REFERENCES `pengajuan` (`id`) ON DELETE CASCADE,
   CONSTRAINT `verifikasi_ibfk_2` FOREIGN KEY (`id_petugas`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel hasil verifikasi';
 
--- Tabel kriteria (untuk referensi SAW)
-CREATE TABLE IF NOT EXISTS `kriteria` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nama` varchar(100) NOT NULL,
-  `tipe` enum('benefit','cost') NOT NULL,
-  `bobot` decimal(5,2) NOT NULL,
-  `keterangan` text,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Insert kriteria sesuai penelitian
-INSERT INTO `kriteria` (`nama`, `tipe`, `bobot`, `keterangan`) VALUES
-('Penghasilan', 'cost', 0.25, 'Pendapatan per bulan. Semakin rendah, semakin prioritas'),
-('Status Rumah', 'cost', 0.15, 'Kepemilikan rumah. Menumpang/Sewa lebih prioritas'),
-('Daya Listrik', 'cost', 0.15, 'Daya listrik rumah. Semakin rendah, semakin prioritas'),
-('Pengeluaran', 'cost', 0.20, 'Pengeluaran per bulan. Semakin tinggi, semakin prioritas'),
-('Jumlah Keluarga', 'benefit', 0.15, 'Jumlah anggota keluarga. Semakin banyak, semakin prioritas'),
-('Anak Usia Sekolah', 'benefit', 0.10, 'Jumlah anak usia sekolah. Semakin banyak, semakin prioritas');
-
--- Tabel total_nilai (hasil perhitungan SAW)
+-- ============================================================
+-- TABEL 5: total_nilai
+-- Menyimpan hasil perhitungan SAW (ranking penerima)
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `total_nilai` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_pengajuan` int(11) NOT NULL,
-  `skor_total` decimal(10,4) NOT NULL,
-  `peringkat` int(11) DEFAULT NULL,
-  `tanggal_hitung` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id_pengajuan` int(11) NOT NULL COMMENT 'Foreign key ke tabel pengajuan',
+  `skor_total` decimal(10,4) NOT NULL COMMENT 'Skor hasil perhitungan SAW (0-1)',
+  `peringkat` int(11) DEFAULT NULL COMMENT 'Peringkat berdasarkan skor',
+  `tanggal_hitung` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu perhitungan dilakukan',
+  
   PRIMARY KEY (`id`),
   KEY `id_pengajuan` (`id_pengajuan`),
+  KEY `peringkat` (`peringkat`),
   CONSTRAINT `total_nilai_ibfk_1` FOREIGN KEY (`id_pengajuan`) REFERENCES `pengajuan` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Tabel log_perhitungan (untuk tracking perhitungan SAW)
-CREATE TABLE IF NOT EXISTS `log_perhitungan` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tanggal` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `jumlah_data` int(11) NOT NULL,
-  `keterangan` text,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel hasil perhitungan SAW';
