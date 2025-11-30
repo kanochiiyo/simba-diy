@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", function () {
   // Toggle Password for Login/Register
   const togglePassword = document.getElementById("togglePassword");

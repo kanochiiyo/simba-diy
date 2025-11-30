@@ -1,22 +1,21 @@
 <?php
 // mengambil fungsi koneksi dari connection
 require_once(__DIR__ . "/connection.php");
-// require_once (__DIR__ . "/functions.php");
 
 function register($formData)
 {
   $connection = getConnection();
 
-  $name = $formData["name"];
-  $username = strtolower(stripslashes($formData["username"]));
+  $name = mysqli_real_escape_string($connection, trim($formData["name"]));
+  $nik = mysqli_real_escape_string($connection, trim($formData["nik"]));
   $password = mysqli_real_escape_string($connection, $formData["password"]);
   $confirmpassword = mysqli_real_escape_string($connection, $formData["confirmpassword"]);
 
-  // cek udah ada yg make belom usernamenya
-  $result = $connection->query("SELECT username FROM user WHERE username = '$username'");
+  // cek udah ada yg make belom niknya
+  $result = $connection->query("SELECT nik FROM user WHERE nik = '$nik'");
   if ($result->fetch_assoc()) {
     echo "<script>
-    alert('Login gagal. Username tidak tersedia.');
+    alert('Login gagal. NIK tidak tersedia.');
     </script>";
     return false;
   }
@@ -32,7 +31,7 @@ function register($formData)
   // enkripsi password pake password hash
   $password = password_hash($password, PASSWORD_DEFAULT);
 
-  $connection->query("INSERT INTO user VALUES (null, '$name', '$username', '$password', 'user')");
+  $connection->query("INSERT INTO user (nama, nik, password, role) VALUES ('$name', '$nik', '$password', 'user')");
 
   return ($connection->affected_rows) ? true : false;
 }
@@ -42,14 +41,14 @@ function loginAttempt($formData)
   // ob_start();
   $connection = getConnection();
 
-  $username = strtolower($formData["username"]);
+  $nik = mysqli_real_escape_string($connection, trim($formData["nik"]));
   $password = $formData["password"];
 
-  $result = $connection->query("SELECT * FROM user WHERE username='$username'");
+  $result = $connection->query("SELECT * FROM user WHERE nik='$nik'");
 
-  // kalo username gk ditemuin gaiso login
+  // kalo nik gk ditemuin gaiso login
   if ($result->num_rows !== 1) {
-    $messageError = 'Login gagal. Username tidak ditemukan.';
+    $messageError = 'Login gagal. NIK tidak ditemukan.';
     echo "<script>alert('" . addslashes($messageError) . "');</script>";
     ob_end_flush();
     return false;
@@ -66,7 +65,7 @@ function loginAttempt($formData)
   }
 
   $_SESSION['id'] = $userData->id;
-  $_SESSION['username'] = $userData->username;
+  $_SESSION['nik'] = $userData->nik;
   $_SESSION['login'] = true;
 
   return true;
@@ -85,10 +84,10 @@ function isAdmin()
 {
   $connection = getConnection();
 
-  if (isset($_SESSION['username'])) {
-    $username = $_SESSION['username'];
+  if (isset($_SESSION['nik'])) {
+    $nik = $_SESSION['nik'];
 
-    $result = $connection->query("SELECT * FROM user WHERE username = '$username'");
+    $result = $connection->query("SELECT * FROM user WHERE nik = '$nik'");
 
     $userData = $result->fetch_object();
 
@@ -99,26 +98,8 @@ function isAdmin()
   return false;
 }
 
-function isStaff()
-{
-  $connection = getConnection();
-
-  if (isset($_SESSION['username'])) {
-    $username = $_SESSION['username'];
-
-    $result = $connection->query("SELECT * FROM user WHERE username = '$username'");
-
-    $userData = $result->fetch_object();
-
-    if ($userData->role === "staff") {
-      return true;
-    }
-  }
-  return false;
-}
 
 function logout(): void
 {
   session_destroy();
 }
-?>
