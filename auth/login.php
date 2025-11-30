@@ -58,7 +58,7 @@ include($projectRoot . '/templates/header.php');
 
             <div class="input-group">
                 <label for="nik" style="display: block; font-size: 14px; font-weight: 600; color: var(--color-text); margin-bottom: 8px;">
-                    <i class="fas fa-user"></i> NIK
+                 NIK
                 </label>
                 <input type="text" name="nik" id="nik" placeholder="Masukkan NIK" required autofocus>
             </div>
@@ -96,7 +96,7 @@ include($projectRoot . '/templates/header.php');
 
         <p style="text-align: center; margin-top: 15px; font-size: 13px; color: var(--color-text); opacity: 0.6;">
             <a href="../index.php" style="color: var(--color-primary); text-decoration: none;">
-                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+                Kembali ke Beranda
             </a>
         </p>
     </div>
