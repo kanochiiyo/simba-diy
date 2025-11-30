@@ -1,6 +1,6 @@
 -- Database: simba
 
--- Tabel user (sudah ada, tapi ditambahkan field)
+-- Tabel user
 CREATE TABLE IF NOT EXISTS `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nama` varchar(255) NOT NULL,
@@ -66,44 +66,42 @@ CREATE TABLE IF NOT EXISTS `verifikasi` (
   CONSTRAINT `verifikasi_ibfk_2` FOREIGN KEY (`id_petugas`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Tabel kriteria
+-- Tabel kriteria (untuk referensi SAW)
 CREATE TABLE IF NOT EXISTS `kriteria` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nama` varchar(100) NOT NULL,
   `tipe` enum('benefit','cost') NOT NULL,
   `bobot` decimal(5,2) NOT NULL,
+  `keterangan` text,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Insert kriteria default
-INSERT INTO `kriteria` (`nama`, `tipe`, `bobot`) VALUES
-('Penghasilan', 'cost', 0.25),
-('Status Rumah', 'cost', 0.15),
-('Daya Listrik', 'cost', 0.15),
-('Pengeluaran', 'benefit', 0.20),
-('Jumlah Keluarga', 'benefit', 0.15),
-('Anak Usia Sekolah', 'benefit', 0.10);
+-- Insert kriteria sesuai penelitian
+INSERT INTO `kriteria` (`nama`, `tipe`, `bobot`, `keterangan`) VALUES
+('Penghasilan', 'cost', 0.25, 'Pendapatan per bulan. Semakin rendah, semakin prioritas'),
+('Status Rumah', 'cost', 0.15, 'Kepemilikan rumah. Menumpang/Sewa lebih prioritas'),
+('Daya Listrik', 'cost', 0.15, 'Daya listrik rumah. Semakin rendah, semakin prioritas'),
+('Pengeluaran', 'cost', 0.20, 'Pengeluaran per bulan. Semakin tinggi, semakin prioritas'),
+('Jumlah Keluarga', 'benefit', 0.15, 'Jumlah anggota keluarga. Semakin banyak, semakin prioritas'),
+('Anak Usia Sekolah', 'benefit', 0.10, 'Jumlah anak usia sekolah. Semakin banyak, semakin prioritas');
 
--- Tabel nilai
-CREATE TABLE IF NOT EXISTS `nilai` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_pengajuan` int(11) NOT NULL,
-  `id_kriteria` int(11) NOT NULL,
-  `nilai` decimal(10,2) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_pengajuan` (`id_pengajuan`),
-  KEY `id_kriteria` (`id_kriteria`),
-  CONSTRAINT `nilai_ibfk_1` FOREIGN KEY (`id_pengajuan`) REFERENCES `pengajuan` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `nilai_ibfk_2` FOREIGN KEY (`id_kriteria`) REFERENCES `kriteria` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Tabel total_nilai
+-- Tabel total_nilai (hasil perhitungan SAW)
 CREATE TABLE IF NOT EXISTS `total_nilai` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_pengajuan` int(11) NOT NULL,
   `skor_total` decimal(10,4) NOT NULL,
   `peringkat` int(11) DEFAULT NULL,
+  `tanggal_hitung` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `id_pengajuan` (`id_pengajuan`),
   CONSTRAINT `total_nilai_ibfk_1` FOREIGN KEY (`id_pengajuan`) REFERENCES `pengajuan` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel log_perhitungan (untuk tracking perhitungan SAW)
+CREATE TABLE IF NOT EXISTS `log_perhitungan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tanggal` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `jumlah_data` int(11) NOT NULL,
+  `keterangan` text,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
