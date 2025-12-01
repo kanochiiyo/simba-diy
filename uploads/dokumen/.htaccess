@@ -1,0 +1,5 @@
+Options -Indexes
+Require all denied
+<FilesMatch "\.(jpg|jpeg|png|pdf)$">
+    Require all granted
+</FilesMatch>

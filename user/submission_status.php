@@ -149,76 +149,85 @@ $pengajuanList = getUserPengajuan($id_user);
 
                         <!-- Detail Pengajuan (Hidden by default) -->
                         <div id="detail-<?php echo $pengajuan['id']; ?>" class="mt-4 pt-4" style="display: none; border-top: 2px solid #f3f4f6;">
-                            <!-- Data Ekonomi & Keluarga -->
+
+                            <!-- Data Ekonomi & Keluarga (2 kolom sejajar) -->
                             <div class="row g-4 mb-4">
+
+                                <!-- Card Data Ekonomi -->
                                 <div class="col-lg-6">
                                     <div style="background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-background) 100%); padding: 20px; border-radius: 12px; height: 100%;">
                                         <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--color-text); display: flex; align-items: center; gap: 8px;">
                                             <i class="fas fa-money-bill-wave" style="color: var(--color-primary);"></i>
                                             Data Ekonomi
                                         </h5>
-                                        <div style="background-color: rgba(255, 255, 255, 0.7); padding: 16px; border-radius: 10px;">
+
+                                        <div style="background-color: rgba(255, 255, 255, 0.7); padding: 16px; border-radius: 10px; height: 180px;">
                                             <div class="row g-3">
                                                 <div class="col-6">
                                                     <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Penghasilan</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);">
-                                                        <?php echo formatGajiLabel($pengajuan['gaji']); ?>
-                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo formatGajiLabel($pengajuan['gaji']); ?></div>
                                                 </div>
                                                 <div class="col-6">
                                                     <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Pengeluaran</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);">
-                                                        <?php echo formatGajiLabel($pengajuan['pengeluaran']); ?>
-                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo formatGajiLabel($pengajuan['pengeluaran']); ?></div>
                                                 </div>
                                             </div>
-                                            <div class="col-6">
-                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Status Rumah</div>
-                                                <div style="font-size: 14px; font-weight: 600; color: var(--color-text);"><?php echo $pengajuan['status_rumah']; ?></div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Daya Listrik</div>
-                                                <div style="font-size: 14px; font-weight: 600; color: var(--color-text);"><?php echo $pengajuan['daya_listrik']; ?> VA</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div class="col-lg-6">
-                                <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 20px; border-radius: 12px; height: 100%;">
-                                    <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
-                                        <i class="fas fa-users" style="color: #3b82f6;"></i>
-                                        Data Keluarga
-                                    </h5>
-                                    <div style="background-color: rgba(255, 255, 255, 0.7); padding: 16px; border-radius: 10px;">
-                                        <div class="row g-3">
-                                            <div class="col-6">
-                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;">
-                                                    <?php echo formatJumlahKeluargaLabel($pengajuan['jml_keluarga']); ?>
+                                            <div class="row g-3 mt-1">
+                                                <div class="col-6">
+                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Status Rumah</div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo $pengajuan['status_rumah']; ?></div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Daya Listrik</div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo $pengajuan['daya_listrik']; ?> VA</div>
                                                 </div>
                                             </div>
-                                            <div class="col-6">
-                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;">
-                                                    <?php echo formatAnakSekolahLabel($pengajuan['jml_anak_sekolah']); ?>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Nomor KK</div>
-                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['no_kk']; ?></div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Nomor HP</div>
-                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['no_hp']; ?></div>
-                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+
+                                <!-- Card Data Keluarga -->
+                                <div class="col-lg-6">
+                                    <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 20px; border-radius: 12px; height: 100%;">
+                                        <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-users"></i>
+                                            Data Keluarga
+                                        </h5>
+
+                                        <div style="background-color: rgba(255, 255, 255, 0.7); padding: 16px; border-radius: 10px;">
+                                            <div class="row g-3">
+                                                <div class="col-6">
+                                                    <div style="font-size: 12px; color: #6b7280;">Jumlah Anggota Keluarga</div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo formatJumlahKeluargaLabel($pengajuan['jml_keluarga']); ?></div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div style="font-size: 12px; color: #6b7280;">Jumlah Anak Sekolah</div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo formatAnakSekolahLabel($pengajuan['jml_anak_sekolah']); ?></div>
+                                                </div>
+
+                                                <div class="col-12">
+                                                    <div style="font-size: 12px; color: #6b7280;">Nomor KK</div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo $pengajuan['no_kk']; ?></div>
+                                                </div>
+
+                                                <div class="col-12">
+                                                    <div style="font-size: 12px; color: #6b7280;">Nomor HP</div>
+                                                    <div style="font-size: 14px; font-weight: 600;"><?php echo $pengajuan['no_hp']; ?></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            </div> <!-- END row -->
                         </div>
 
+
                         <!-- Alamat -->
-                        <div style="background-color: #f9fafb; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="background-color: #f9fafb; padding: 16px; border-radius: 12px; margin-top:20px; margin-bottom: 20px;">
                             <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--color-text);">
                                 <i class="fas fa-map-marker-alt" style="color: var(--color-primary); margin-right: 6px;"></i>
                                 Alamat Lengkap
