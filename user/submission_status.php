@@ -299,10 +299,9 @@ $pengajuanList = getUserPengajuan($id_user);
                             </div>
                         <?php endif; ?>
                     </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
-    <?php endforeach; ?>
-<?php endif; ?>
-    </div>
     </div>
 
     <script>
