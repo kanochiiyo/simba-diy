@@ -108,12 +108,17 @@ function konversiAnakSekolah($jumlah)
     return KONVERSI_ANAK_SEKOLAH[$jumlah] ?? 1;
 }
 
-function calculateSAW()
+// UPDATED: Calculate SAW untuk program tertentu
+function calculateSAW($id_program = null)
 {
     $connection = getConnection();
 
-    // Ambil semua pengajuan yang terverifikasi
+    // Query dengan filter program (jika ada)
     $query = "SELECT * FROM pengajuan WHERE status = 'Terverifikasi'";
+    if ($id_program) {
+        $query .= " AND id_program = " . intval($id_program);
+    }
+
     $result = $connection->query($query);
 
     if ($result->num_rows == 0) {
@@ -199,9 +204,14 @@ function calculateSAW()
     }
 
     // STEP 7: Simpan ke database
-
-    // Hapus data lama
-    $connection->query("DELETE FROM total_nilai");
+    // Hapus data lama untuk program ini
+    if ($id_program) {
+        $connection->query("DELETE tn FROM total_nilai tn 
+                           JOIN pengajuan p ON tn.id_pengajuan = p.id 
+                           WHERE p.id_program = " . intval($id_program));
+    } else {
+        $connection->query("DELETE FROM total_nilai");
+    }
 
     // Insert data baru
     foreach ($hasilAkhir as $hasil) {
@@ -215,7 +225,6 @@ function calculateSAW()
 
     return true;
 }
-
 
 function getSAWDetails($id_pengajuan)
 {
@@ -296,26 +305,37 @@ function getKriteriaNilai($id_pengajuan)
     ];
 }
 
-function getSAWStatistics()
+// UPDATED: Get statistics per program
+function getSAWStatistics($id_program = null)
 {
     $connection = getConnection();
 
     $stats = [];
 
+    // Build WHERE clause
+    $whereClause = "";
+    if ($id_program) {
+        $whereClause = " WHERE p.id_program = " . intval($id_program);
+    }
+
     // Total peserta
-    $result = $connection->query("SELECT COUNT(*) as total FROM total_nilai");
+    $result = $connection->query("SELECT COUNT(*) as total FROM total_nilai tn 
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
     $stats['total_peserta'] = $result->fetch_assoc()['total'];
 
     // Skor tertinggi
-    $result = $connection->query("SELECT MAX(skor_total) as max_skor FROM total_nilai");
+    $result = $connection->query("SELECT MAX(tn.skor_total) as max_skor FROM total_nilai tn 
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
     $stats['skor_tertinggi'] = $result->fetch_assoc()['max_skor'] ?? 0;
 
     // Skor terendah
-    $result = $connection->query("SELECT MIN(skor_total) as min_skor FROM total_nilai");
+    $result = $connection->query("SELECT MIN(tn.skor_total) as min_skor FROM total_nilai tn 
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
     $stats['skor_terendah'] = $result->fetch_assoc()['min_skor'] ?? 0;
 
     // Rata-rata skor
-    $result = $connection->query("SELECT AVG(skor_total) as avg_skor FROM total_nilai");
+    $result = $connection->query("SELECT AVG(tn.skor_total) as avg_skor FROM total_nilai tn 
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
     $stats['rata_rata'] = $result->fetch_assoc()['avg_skor'] ?? 0;
 
     return $stats;
@@ -324,11 +344,12 @@ function getSAWStatistics()
 function autoCalculateSAW($id_pengajuan)
 {
     $connection = getConnection();
-    $result = $connection->query("SELECT status FROM pengajuan WHERE id = '$id_pengajuan'");
+    $result = $connection->query("SELECT status, id_program FROM pengajuan WHERE id = '$id_pengajuan'");
     $data = $result->fetch_assoc();
 
     if ($data && $data['status'] == 'Terverifikasi') {
-        return calculateSAW();
+        // Calculate SAW untuk program terkait
+        return calculateSAW($data['id_program']);
     }
 
     return false;

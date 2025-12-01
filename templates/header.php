@@ -24,7 +24,7 @@
     <!-- CSS lokal -->
     <link rel="stylesheet"
         href="<?php echo (strpos($_SERVER['SCRIPT_NAME'], '/auth/') !== false ? '../' : '') . 'css/style.css'; ?>">
-
+    <link rel="stylesheet" href="../css/style.css">
     <title>SIMBA DIY</title>
 </head>
 

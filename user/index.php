@@ -5,6 +5,7 @@ session_start();
 
 require_once(__DIR__ . "/../functions/authentication.php");
 require_once(__DIR__ . "/../functions/submission.php");
+require_once(__DIR__ . "/../functions/program.php"); // ADDED
 
 if (!isLogged() || isAdmin()) {
     header("Location: ../auth/login.php");
@@ -15,6 +16,13 @@ $id_user = $_SESSION['id'];
 $stats = getUserDashboardStats($id_user);
 $userRanking = getUserRanking($id_user);
 $currentPengajuan = getPengajuanStatus($id_user);
+
+// ADDED: Get active program
+$activeProgram = getActiveProgram();
+$programStats = null;
+if ($activeProgram) {
+    $programStats = getProgramStats($activeProgram['id']);
+}
 
 $connection = getConnection();
 $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->fetch_assoc();
@@ -54,6 +62,29 @@ $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->f
                     <p style="margin: 5px 0 0 0;">Sistem Informasi Bantuan Sosial Daerah Istimewa Yogyakarta. Kelola pengajuan bantuan Anda dengan mudah dan transparan.</p>
                 </div>
             </div>
+
+            <?php if ($activeProgram): ?>
+                <div class="alert" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-color: #6ee7b7; color: #065f46;">
+                    <i class="fas fa-bullhorn"></i>
+                    <div>
+                        <strong>Program Aktif: <?php echo htmlspecialchars($activeProgram['nama_program']); ?></strong>
+                        <p style="margin: 8px 0 0 0;">
+                            Program bantuan sedang dibuka! Periode: <?php echo date('d M Y', strtotime($activeProgram['tanggal_mulai'])); ?> - <?php echo date('d M Y', strtotime($activeProgram['tanggal_selesai'])); ?>.
+                            <?php if (!$currentPengajuan || $currentPengajuan['status'] == 'Ditolak'): ?>
+                                <a href="apply.php" style="color: #065f46; font-weight: 700; text-decoration: underline;">Ajukan sekarang!</a>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Tidak Ada Program Aktif</strong>
+                        <p style="margin: 8px 0 0 0;">Saat ini belum ada program bantuan yang dibuka. Pantau terus dashboard untuk informasi program terbaru.</p>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- Dashboard Cards -->
             <div class="dashboard-cards">
@@ -95,7 +126,96 @@ $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->f
                         <?php echo $userRanking ? 'Skor: ' . number_format($userRanking['skor_total'], 2) : 'Belum ada ranking'; ?>
                     </div>
                 </div>
+                <?php if ($activeProgram && $programStats): ?>
+                    <div class="dashboard-card" style="border-left: 4px solid #10b981;">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46;">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="card-title">Program Aktif</div>
+                        <div class="card-value" style="font-size: 16px; color: #065f46;">
+                            <?php echo $programStats['terverifikasi']; ?> / <?php echo $activeProgram['kuota']; ?>
+                        </div>
+                        <div class="card-description">Kuota terisi</div>
+                    </div>
+                <?php endif; ?>
             </div>
+
+            <?php if ($activeProgram): ?>
+                <div class="form-card" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #93c5fd;">
+                    <h2 class="form-section-title" style="color: #1e40af;">
+                        <i class="fas fa-clipboard-check" style="color: #2563eb;"></i> Program Bantuan Aktif
+                    </h2>
+
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h3 style="font-size: 20px; font-weight: 700; color: #1e40af; margin-bottom: 12px;">
+                                <?php echo htmlspecialchars($activeProgram['nama_program']); ?>
+                            </h3>
+                            <?php if ($activeProgram['deskripsi']): ?>
+                                <p style="font-size: 14px; color: #1e40af; margin-bottom: 16px; line-height: 1.6;">
+                                    <?php echo htmlspecialchars($activeProgram['deskripsi']); ?>
+                                </p>
+                            <?php endif; ?>
+
+                            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Periode Program</div>
+                                    <div style="font-size: 14px; font-weight: 600; color: #1e40af;">
+                                        <?php echo date('d M Y', strtotime($activeProgram['tanggal_mulai'])); ?> -
+                                        <?php echo date('d M Y', strtotime($activeProgram['tanggal_selesai'])); ?>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Kuota Penerima</div>
+                                    <div style="font-size: 14px; font-weight: 600; color: #1e40af;">
+                                        <?php echo $activeProgram['kuota']; ?> Orang
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Pendaftar Terverifikasi</div>
+                                    <div style="font-size: 14px; font-weight: 600; color: #10b981;">
+                                        <?php echo $programStats['terverifikasi']; ?> Orang
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4" style="text-align: right;">
+                            <?php if (!$currentPengajuan || $currentPengajuan['status'] == 'Ditolak'): ?>
+                                <a href="apply.php" class="btn btn-primary w-100" style="padding: 16px;">
+                                    <i class="fas fa-plus-circle"></i> Daftar Program Ini
+                                </a>
+                            <?php else: ?>
+                                <div style="padding: 16px; background-color: rgba(16, 185, 129, 0.1); border-radius: 12px;">
+                                    <i class="fas fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
+                                    <div style="font-size: 14px; font-weight: 600; color: #065f46;">
+                                        Anda Sudah Mendaftar
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Program Progress Bar -->
+                    <?php if ($programStats):
+                        $percentage = $activeProgram['kuota'] > 0 ? ($programStats['terverifikasi'] / $activeProgram['kuota']) * 100 : 0;
+                        $percentage = min($percentage, 100);
+                    ?>
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #bfdbfe;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 13px; font-weight: 600; color: #1e40af;">Progress Kuota</span>
+                                <span style="font-size: 13px; font-weight: 600; color: #1e40af;"><?php echo number_format($percentage, 1); ?>%</span>
+                            </div>
+                            <div style="height: 12px; background-color: #e0e7ff; border-radius: 6px; overflow: hidden;">
+                                <div style="height: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); width: <?php echo $percentage; ?>%; transition: width 0.3s ease;"></div>
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 6px; text-align: center;">
+                                <?php echo $programStats['terverifikasi']; ?> dari <?php echo $activeProgram['kuota']; ?> kuota terisi
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <!-- Quick Actions -->
             <div class="form-card">

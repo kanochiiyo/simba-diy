@@ -50,6 +50,7 @@ function createPengajuan($formData, $files)
     $connection = getConnection();
 
     $id = $_SESSION['id'];
+    $id_program = isset($formData['id_program']) ? intval($formData['id_program']) : null; // ADDED
     $nik = mysqli_real_escape_string($connection, $formData['nik']);
     $no_kk = mysqli_real_escape_string($connection, $formData['no_kk']);
     $nama_lengkap = mysqli_real_escape_string($connection, $formData['nama_lengkap']);
@@ -62,18 +63,34 @@ function createPengajuan($formData, $files)
     $jml_keluarga = mysqli_real_escape_string($connection, $formData['jml_keluarga']);
     $jml_anak_sekolah = mysqli_real_escape_string($connection, $formData['jml_anak_sekolah']);
 
-    // Cek apakah user sudah pernah mengajukan
-    $checkQuery = "SELECT id FROM pengajuan WHERE id_user = '$id' AND status != 'Ditolak'";
-    $checkResult = $connection->query($checkQuery);
-
-    if ($checkResult->num_rows > 0) {
-        echo "<script>alert('Anda sudah memiliki pengajuan yang sedang diproses.');</script>";
+    // MODIFIED: Cek apakah program valid dan aktif
+    if (!$id_program) {
+        echo "<script>alert('Program tidak valid.');</script>";
         return false;
     }
 
-    // Insert pengajuan
-    $insertQuery = "INSERT INTO pengajuan (id_user, nik, no_kk, nama_lengkap, alamat, no_hp, gaji, status_rumah, daya_listrik, pengeluaran, jml_keluarga, jml_anak_sekolah) 
-                    VALUES ('$id', '$nik', '$no_kk', '$nama_lengkap', '$alamat', '$no_hp', '$gaji', '$status_rumah', '$daya_listrik', '$pengeluaran', '$jml_keluarga', '$jml_anak_sekolah')";
+    require_once(__DIR__ . "/program.php");
+    $program = getProgramById($id_program);
+    if (!$program || $program['status'] != 'Aktif') {
+        echo "<script>alert('Program tidak aktif atau tidak ditemukan.');</script>";
+        return false;
+    }
+
+    // Cek apakah user sudah pernah mengajukan untuk program ini
+    $checkQuery = "SELECT id FROM pengajuan 
+                   WHERE id_user = '$id' 
+                   AND id_program = $id_program 
+                   AND status != 'Ditolak'";
+    $checkResult = $connection->query($checkQuery);
+
+    if ($checkResult->num_rows > 0) {
+        echo "<script>alert('Anda sudah memiliki pengajuan yang sedang diproses untuk program ini.');</script>";
+        return false;
+    }
+
+    // MODIFIED: Insert pengajuan dengan id_program
+    $insertQuery = "INSERT INTO pengajuan (id_user, id_program, nik, no_kk, nama_lengkap, alamat, no_hp, gaji, status_rumah, daya_listrik, pengeluaran, jml_keluarga, jml_anak_sekolah) 
+                    VALUES ('$id', $id_program, '$nik', '$no_kk', '$nama_lengkap', '$alamat', '$no_hp', '$gaji', '$status_rumah', '$daya_listrik', '$pengeluaran', '$jml_keluarga', '$jml_anak_sekolah')";
 
     if (!$connection->query($insertQuery)) {
         echo "<script>alert('Gagal menyimpan pengajuan.');</script>";
@@ -224,27 +241,35 @@ function getPengajuanDetail($id_pengajuan)
     return $result->fetch_assoc();
 }
 
-// Fungsi untuk mendapatkan status pengajuan
-function getPengajuanStatus($id_user)
+function getPengajuanStatus($id_user, $id_program = null)
 {
     $connection = getConnection();
 
-    $query = "SELECT id, status, tanggal_dibuat FROM pengajuan WHERE id_user = '$id_user' ORDER BY tanggal_dibuat DESC LIMIT 1";
+    $query = "SELECT id, id_program, status, tanggal_dibuat FROM pengajuan WHERE id_user = '$id_user'";
+    if ($id_program) {
+        $query .= " AND id_program = " . intval($id_program);
+    }
+    $query .= " ORDER BY tanggal_dibuat DESC LIMIT 1";
 
     $result = $connection->query($query);
     return $result->fetch_assoc();
 }
 
 // Fungsi untuk mendapatkan ranking
-function getRanking($limit = null)
+function getRanking($id_program = null, $limit = null)
 {
     $connection = getConnection();
 
-    $query = "SELECT p.nama_lengkap, p.nik, tn.skor_total, tn.peringkat, p.status
+    $query = "SELECT p.nama_lengkap, p.nik, tn.skor_total, tn.peringkat, p.status, p.id_program
               FROM total_nilai tn
               JOIN pengajuan p ON tn.id_pengajuan = p.id
-              WHERE p.status = 'Terverifikasi'
-              ORDER BY tn.peringkat ASC";
+              WHERE p.status = 'Terverifikasi'";
+
+    if ($id_program) {
+        $query .= " AND p.id_program = " . intval($id_program);
+    }
+
+    $query .= " ORDER BY tn.peringkat ASC";
 
     if ($limit) {
         $query .= " LIMIT $limit";
@@ -255,16 +280,20 @@ function getRanking($limit = null)
 }
 
 // Fungsi untuk mendapatkan ranking user tertentu
-function getUserRanking($id_user)
+function getUserRanking($id_user, $id_program = null)
 {
     $connection = getConnection();
 
-    $query = "SELECT tn.skor_total, tn.peringkat, p.status
+    $query = "SELECT tn.skor_total, tn.peringkat, p.status, p.id_program
               FROM total_nilai tn
               JOIN pengajuan p ON tn.id_pengajuan = p.id
-              WHERE p.id_user = '$id_user' AND p.status = 'Terverifikasi'
-              ORDER BY tn.peringkat ASC
-              LIMIT 1";
+              WHERE p.id_user = '$id_user' AND p.status = 'Terverifikasi'";
+
+    if ($id_program) {
+        $query .= " AND p.id_program = " . intval($id_program);
+    }
+
+    $query .= " ORDER BY tn.peringkat ASC LIMIT 1";
 
     $result = $connection->query($query);
     return $result->fetch_assoc();

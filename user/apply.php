@@ -5,6 +5,7 @@ session_start();
 
 require_once(__DIR__ . "/../functions/authentication.php");
 require_once(__DIR__ . "/../functions/submission.php");
+require_once(__DIR__ . "/../functions/program.php");
 
 if (!isLogged() || isAdmin()) {
     header("Location: ../auth/login.php");
@@ -15,21 +16,33 @@ $id_user = $_SESSION['id'];
 $success = false;
 $error = null;
 
-// Cek apakah sudah ada pengajuan yang sedang diproses
-$currentPengajuan = getPengajuanStatus($id_user);
-if ($currentPengajuan && $currentPengajuan['status'] != 'Ditolak') {
-    header("Location: submission_status.php");
-    exit;
+$activeProgram = getActiveProgram();
+
+if (!$activeProgram) {
+    $error = "Tidak ada program bantuan yang aktif saat ini. Silakan coba lagi nanti.";
+}
+
+// Cek apakah sudah ada pengajuan yang sedang diproses untuk program aktif
+if ($activeProgram) {
+    $currentPengajuan = getPengajuanStatus($id_user);
+    if ($currentPengajuan && $currentPengajuan['status'] != 'Ditolak' && $currentPengajuan['id_program'] == $activeProgram['id']) {
+        header("Location: submission_status.php");
+        exit;
+    }
 }
 
 // Proses form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
     // Validasi
-    if (!validateNIK($_POST['nik'])) {
+    if (!$activeProgram) {
+        $error = "Tidak ada program aktif untuk pengajuan.";
+    } elseif (!validateNIK($_POST['nik'])) {
         $error = "NIK harus 16 digit angka.";
     } elseif (!validatePhoneNumber($_POST['no_hp'])) {
         $error = "Nomor HP tidak valid.";
     } else {
+        // MODIFIED: Pass id_program to createPengajuan
+        $_POST['id_program'] = $activeProgram['id'];
         $result = createPengajuan($_POST, $_FILES);
         if ($result) {
             $success = true;
@@ -226,383 +239,446 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                 </div>
             <?php endif; ?>
 
-            <div class="form-card mb-4">
-                <div class="row g-3">
-                    <div class="col-md-3 col-6">
-                        <div class="step-indicator active" id="indicator-1">
-                            <i class="fas fa-user"></i>
-                            <div style="font-size: 13px; font-weight: 600;">1. Data Diri</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="step-indicator" id="indicator-2">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <div style="font-size: 13px; font-weight: 600;">2. Ekonomi</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="step-indicator" id="indicator-3">
-                            <i class="fas fa-users"></i>
-                            <div style="font-size: 13px; font-weight: 600;">3. Keluarga</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="step-indicator" id="indicator-4">
-                            <i class="fas fa-file-upload"></i>
-                            <div style="font-size: 13px; font-weight: 600;">4. Dokumen</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <form method="POST" enctype="multipart/form-data" id="pengajuanForm">
-
-                <div class="step-content active" id="step-1">
-                    <div class="form-card">
-                        <h2 class="form-section-title">
-                            <i class="fas fa-user"></i> Data Diri
-                        </h2>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">NIK <span class="required">*</span></label>
-                                    <input type="text" name="nik" class="form-control" required maxlength="16"
-                                        pattern="[0-9]{16}" placeholder="Masukkan 16 digit NIK">
-                                    <small class="form-text">NIK harus 16 digit angka</small>
+            <?php if ($activeProgram): ?>
+                <div class="form-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white;">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <div style="display: flex; align-items: start; gap: 20px;">
+                                <div style="width: 64px; height: 64px; background: rgba(255, 255, 255, 0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0;">
+                                    <i class="fas fa-clipboard-check"></i>
                                 </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Nomor KK <span class="required">*</span></label>
-                                    <input type="text" name="no_kk" class="form-control" required maxlength="16"
-                                        pattern="[0-9]{16}" placeholder="Masukkan 16 digit Nomor KK">
-                                    <small class="form-text">Nomor KK harus 16 digit angka</small>
+                                <div>
+                                    <h3 style="font-size: 22px; font-weight: 700; margin-bottom: 8px;">
+                                        <?php echo htmlspecialchars($activeProgram['nama_program']); ?>
+                                    </h3>
+                                    <?php if ($activeProgram['deskripsi']): ?>
+                                        <p style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">
+                                            <?php echo htmlspecialchars($activeProgram['deskripsi']); ?>
+                                        </p>
+                                    <?php endif; ?>
+                                    <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px;">
+                                        <div>
+                                            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Periode Program</div>
+                                            <div style="font-size: 14px; font-weight: 600;">
+                                                <?php echo date('d M Y', strtotime($activeProgram['tanggal_mulai'])); ?> -
+                                                <?php echo date('d M Y', strtotime($activeProgram['tanggal_selesai'])); ?>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Kuota Penerima</div>
+                                            <div style="font-size: 14px; font-weight: 600;"><?php echo $activeProgram['kuota']; ?> Orang</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Nama Lengkap <span class="required">*</span></label>
-                            <input type="text" name="nama_lengkap" class="form-control" required
-                                placeholder="Masukkan nama lengkap sesuai KTP">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Alamat Lengkap <span class="required">*</span></label>
-                            <textarea name="alamat" class="form-control" rows="3" required
-                                placeholder="Masukkan alamat lengkap sesuai KTP"></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Nomor HP <span class="required">*</span></label>
-                            <input type="text" name="no_hp" class="form-control" required pattern="[0-9]{10,15}"
-                                placeholder="Contoh: 081234567890">
-                            <small class="form-text">Nomor HP yang dapat dihubungi</small>
-                        </div>
-
-                        <div class="d-flex justify-content-end mt-4">
-                            <button type="button" class="btn btn-primary" onclick="nextStep(2)">
-                                Lanjut <i class="fas fa-arrow-right ms-2"></i>
-                            </button>
+                        <div class="col-lg-4" style="text-align: right;">
+                            <div style="background: rgba(255, 255, 255, 0.2); padding: 16px; border-radius: 12px; display: inline-block;">
+                                <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Status Program</div>
+                                <div style="font-size: 18px; font-weight: 700;">
+                                    <i class="fas fa-check-circle"></i> AKTIF
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            <?php endif; ?>
 
-                <div class="step-content" id="step-2">
-                    <div class="form-card">
-                        <h2 class="form-section-title">
-                            <i class="fas fa-money-bill-wave"></i> Data Ekonomi
-                        </h2>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Penghasilan per Bulan <span class="required">*</span></label>
-                                    <select name="gaji" class="form-select" required>
-                                        <option value="">Pilih Range Penghasilan</option>
-                                        <option value="500000">
-                                            < Rp 1.000.000</option>
-                                        <option value="1500000">Rp 1.000.000 - Rp 1.999.000</option>
-                                        <option value="2750000">Rp 2.000.000 - Rp 3.500.000</option>
-                                        <option value="4000000">> Rp 3.500.000</option>
-                                    </select>
-                                    <small class="form-text">Pilih range penghasilan bulanan keluarga</small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Pengeluaran per Bulan <span class="required">*</span></label>
-                                    <select name="pengeluaran" class="form-select" required>
-                                        <option value="">Pilih Range Pengeluaran</option>
-                                        <option value="500000">
-                                            < Rp 1.000.000</option>
-                                        <option value="1500000">Rp 1.000.000 - Rp 1.999.000</option>
-                                        <option value="2750000">Rp 2.000.000 - Rp 3.500.000</option>
-                                        <option value="4000000">> Rp 3.500.000</option>
-                                    </select>
-                                    <small class="form-text">Pilih range pengeluaran bulanan keluarga</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Kepemilikan Rumah <span class="required">*</span></label>
-                                    <select name="status_rumah" class="form-select" required>
-                                        <option value="">Pilih Status Kepemilikan</option>
-                                        <option value="Sewa">Sewa</option>
-                                        <option value="Keluarga">Keluarga</option>
-                                        <option value="Pribadi">Pribadi</option>
-                                    </select>
-                                    <small class="form-text">Status kepemilikan tempat tinggal</small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Kelistrikan <span class="required">*</span></label>
-                                    <select name="daya_listrik" class="form-select" required>
-                                        <option value="">Pilih Status Kelistrikan</option>
-                                        <option value="Menumpang">Menumpang</option>
-                                        <option value="Pribadi 450 Watt">Pribadi 450 Watt</option>
-                                        <option value="Pribadi 900 Watt">Pribadi 900 Watt</option>
-                                        <option value="Pribadi 1200 Watt">Pribadi 1200 Watt</option>
-                                        <option value="Pribadi > 1200 Watt">Pribadi > 1200 Watt</option>
-                                    </select>
-                                    <small class="form-text">Status dan daya listrik rumah</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-secondary" onclick="prevStep(1)">
-                                <i class="fas fa-arrow-left me-2"></i> Kembali
-                            </button>
-                            <button type="button" class="btn btn-primary" onclick="nextStep(3)">
-                                Lanjut <i class="fas fa-arrow-right ms-2"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="step-content" id="step-3">
-                    <div class="form-card">
-                        <h2 class="form-section-title">
-                            <i class="fas fa-users"></i> Data Keluarga
-                        </h2>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Jumlah Anggota Keluarga <span class="required">*</span></label>
-                                    <select name="jml_keluarga" class="form-select" required>
-                                        <option value="">Pilih Jumlah Anggota</option>
-                                        <option value="1">1 - 2 orang</option>
-                                        <option value="3">3 orang</option>
-                                        <option value="4">4 orang</option>
-                                        <option value="5">5 orang</option>
-                                        <option value="6">> 5 orang</option>
-                                    </select>
-                                    <small class="form-text">Termasuk Anda dalam satu KK</small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Keberadaan Anak Usia Sekolah <span class="required">*</span></label>
-                                    <select name="jml_anak_sekolah" class="form-select" required>
-                                        <option value="">Pilih Jumlah Anak Sekolah</option>
-                                        <option value="0">Tidak ada</option>
-                                        <option value="1">1 orang</option>
-                                        <option value="2">2 orang</option>
-                                        <option value="3">3 orang</option>
-                                        <option value="4">> 3 orang</option>
-                                    </select>
-                                    <small class="form-text">Anak usia 5-18 tahun yang masih sekolah</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-secondary" onclick="prevStep(2)">
-                                <i class="fas fa-arrow-left me-2"></i> Kembali
-                            </button>
-                            <button type="button" class="btn btn-primary" onclick="nextStep(4)">
-                                Lanjut <i class="fas fa-arrow-right ms-2"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="step-content" id="step-4">
-                    <div class="form-card">
-                        <h2 class="form-section-title">
-                            <i class="fas fa-file-upload"></i> Dokumen Pendukung
-                        </h2>
-
-                        <div class="alert alert-info mb-4">
-                            <i class="fas fa-info-circle"></i>
-                            <div>
-                                <strong>Ketentuan Upload Dokumen:</strong>
-                                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
-                                    <li>Format file: JPG, PNG, atau PDF</li>
-                                    <li>Ukuran maksimal: 2 MB per file</li>
-                                    <li>Pastikan foto/scan dokumen jelas dan terbaca</li>
-                                    <li>Dokumen bertanda <span class="required-badge">WAJIB</span> harus diupload</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    <i class="fas fa-id-card" style="color: #3b82f6; margin-right: 6px;"></i>
-                                    KTP <span class="required-badge">WAJIB</span>
-                                </label>
-                                <label for="ktp" class="custom-file-upload" id="ktp-label">
-                                    <div class="file-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="file-upload-text">
-                                        <strong>Klik untuk upload KTP</strong>
-                                        <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
-                                    </div>
-                                    <input type="file" name="ktp" id="ktp" accept="image/*,application/pdf" required
-                                        style="display: none;" onchange="handleFileSelect(this, 'ktp')">
-                                    <div class="file-info" id="ktp-info"></div>
-                                </label>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    <i class="fas fa-users" style="color: #8b5cf6; margin-right: 6px;"></i>
-                                    Kartu Keluarga <span class="required-badge">WAJIB</span>
-                                </label>
-                                <label for="kk" class="custom-file-upload" id="kk-label">
-                                    <div class="file-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="file-upload-text">
-                                        <strong>Klik untuk upload Kartu Keluarga</strong>
-                                        <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
-                                    </div>
-                                    <input type="file" name="kk" id="kk" accept="image/*,application/pdf" required
-                                        style="display: none;" onchange="handleFileSelect(this, 'kk')">
-                                    <div class="file-info" id="kk-info"></div>
-                                </label>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    <i class="fas fa-money-check" style="color: #10b981; margin-right: 6px;"></i>
-                                    Slip Gaji / Bukti Penghasilan <span class="optional-badge">OPSIONAL</span>
-                                </label>
-                                <label for="slip_gaji" class="custom-file-upload" id="slip_gaji-label">
-                                    <div class="file-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="file-upload-text">
-                                        <strong>Klik untuk upload Slip Gaji</strong>
-                                        <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
-                                    </div>
-                                    <input type="file" name="slip_gaji" id="slip_gaji" accept="image/*,application/pdf"
-                                        style="display: none;" onchange="handleFileSelect(this, 'slip_gaji')">
-                                    <div class="file-info" id="slip_gaji-info"></div>
-                                </label>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    <i class="fas fa-home" style="color: #f59e0b; margin-right: 6px;"></i>
-                                    Foto Rumah <span class="optional-badge">OPSIONAL</span>
-                                </label>
-                                <label for="foto_rumah" class="custom-file-upload" id="foto_rumah-label">
-                                    <div class="file-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="file-upload-text">
-                                        <strong>Klik untuk upload Foto Rumah</strong>
-                                        <div style="font-size: 12px; margin-top: 4px;">JPG atau PNG (Max. 2MB)</div>
-                                    </div>
-                                    <input type="file" name="foto_rumah" id="foto_rumah" accept="image/*"
-                                        style="display: none;" onchange="handleFileSelect(this, 'foto_rumah')">
-                                    <div class="file-info" id="foto_rumah-info"></div>
-                                </label>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    <i class="fas fa-file-alt" style="color: #ef4444; margin-right: 6px;"></i>
-                                    Surat Keterangan Rumah <span class="optional-badge">OPSIONAL</span>
-                                </label>
-                                <label for="surat_keterangan_rumah" class="custom-file-upload" id="surat_keterangan_rumah-label">
-                                    <div class="file-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="file-upload-text">
-                                        <strong>Klik untuk upload Surat Keterangan</strong>
-                                        <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
-                                    </div>
-                                    <input type="file" name="surat_keterangan_rumah" id="surat_keterangan_rumah"
-                                        accept="image/*,application/pdf" style="display: none;"
-                                        onchange="handleFileSelect(this, 'surat_keterangan_rumah')">
-                                    <div class="file-info" id="surat_keterangan_rumah-info"></div>
-                                </label>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">
-                                    <i class="fas fa-bolt" style="color: #06b6d4; margin-right: 6px;"></i>
-                                    Rekening Listrik <span class="optional-badge">OPSIONAL</span>
-                                </label>
-                                <label for="rekening_listrik" class="custom-file-upload" id="rekening_listrik-label">
-                                    <div class="file-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="file-upload-text">
-                                        <strong>Klik untuk upload Rekening Listrik</strong>
-                                        <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
-                                    </div>
-                                    <input type="file" name="rekening_listrik" id="rekening_listrik"
-                                        accept="image/*,application/pdf" style="display: none;"
-                                        onchange="handleFileSelect(this, 'rekening_listrik')">
-                                    <div class="file-info" id="rekening_listrik-info"></div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-card mt-3">
-                        <div class="alert alert-warning">
+            <?php if (!$activeProgram): ?>
+                <div class="form-card">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <div>
-                                <strong>Perhatian!</strong>
-                                <p style="margin: 5px 0 0 0;">Pastikan semua data yang Anda masukkan sudah benar sebelum dikirim.</p>
+                        </div>
+                        <div class="empty-state-title">Tidak Ada Program Aktif</div>
+                        <div class="empty-state-description">
+                            Saat ini belum ada program bantuan yang dibuka. Silakan kembali lagi nanti atau hubungi admin untuk informasi lebih lanjut.
+                        </div>
+                        <a href="index.php" class="btn btn-primary" style="margin-top: 24px;">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
+                        </a>
+                    </div>
+                </div>
+            <?php else: ?>
+
+                <div class="form-card mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-6">
+                            <div class="step-indicator active" id="indicator-1">
+                                <i class="fas fa-user"></i>
+                                <div style="font-size: 13px; font-weight: 600;">1. Data Diri</div>
                             </div>
                         </div>
+                        <div class="col-md-3 col-6">
+                            <div class="step-indicator" id="indicator-2">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <div style="font-size: 13px; font-weight: 600;">2. Ekonomi</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="step-indicator" id="indicator-3">
+                                <i class="fas fa-users"></i>
+                                <div style="font-size: 13px; font-weight: 600;">3. Keluarga</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="step-indicator" id="indicator-4">
+                                <i class="fas fa-file-upload"></i>
+                                <div style="font-size: 13px; font-weight: 600;">4. Dokumen</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        <div class="d-flex justify-content-between gap-3">
-                            <button type="button" class="btn btn-secondary" onclick="prevStep(3)">
-                                <i class="fas fa-arrow-left me-2"></i> Kembali
-                            </button>
+                <form method="POST" enctype="multipart/form-data" id="pengajuanForm">
 
-                            <div class="d-flex gap-2">
-                                <a href="index.php" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times"></i> Batal
-                                </a>
-                                <button type="submit" name="submit_pengajuan" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane me-2"></i> Kirim Pengajuan
+                    <div class="step-content active" id="step-1">
+                        <div class="form-card">
+                            <h2 class="form-section-title">
+                                <i class="fas fa-user"></i> Data Diri
+                            </h2>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">NIK <span class="required">*</span></label>
+                                        <input type="text" name="nik" class="form-control" required maxlength="16"
+                                            pattern="[0-9]{16}" placeholder="Masukkan 16 digit NIK">
+                                        <small class="form-text">NIK harus 16 digit angka</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Nomor KK <span class="required">*</span></label>
+                                        <input type="text" name="no_kk" class="form-control" required maxlength="16"
+                                            pattern="[0-9]{16}" placeholder="Masukkan 16 digit Nomor KK">
+                                        <small class="form-text">Nomor KK harus 16 digit angka</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Nama Lengkap <span class="required">*</span></label>
+                                <input type="text" name="nama_lengkap" class="form-control" required
+                                    placeholder="Masukkan nama lengkap sesuai KTP">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Alamat Lengkap <span class="required">*</span></label>
+                                <textarea name="alamat" class="form-control" rows="3" required
+                                    placeholder="Masukkan alamat lengkap sesuai KTP"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Nomor HP <span class="required">*</span></label>
+                                <input type="text" name="no_hp" class="form-control" required pattern="[0-9]{10,15}"
+                                    placeholder="Contoh: 081234567890">
+                                <small class="form-text">Nomor HP yang dapat dihubungi</small>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                                    Lanjut <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
 
-            </form>
+                    <div class="step-content" id="step-2">
+                        <div class="form-card">
+                            <h2 class="form-section-title">
+                                <i class="fas fa-money-bill-wave"></i> Data Ekonomi
+                            </h2>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Penghasilan per Bulan <span class="required">*</span></label>
+                                        <select name="gaji" class="form-select" required>
+                                            <option value="">Pilih Range Penghasilan</option>
+                                            <option value="500000">
+                                                < Rp 1.000.000</option>
+                                            <option value="1500000">Rp 1.000.000 - Rp 1.999.000</option>
+                                            <option value="2750000">Rp 2.000.000 - Rp 3.500.000</option>
+                                            <option value="4000000">> Rp 3.500.000</option>
+                                        </select>
+                                        <small class="form-text">Pilih range penghasilan bulanan keluarga</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Pengeluaran per Bulan <span class="required">*</span></label>
+                                        <select name="pengeluaran" class="form-select" required>
+                                            <option value="">Pilih Range Pengeluaran</option>
+                                            <option value="500000">
+                                                < Rp 1.000.000</option>
+                                            <option value="1500000">Rp 1.000.000 - Rp 1.999.000</option>
+                                            <option value="2750000">Rp 2.000.000 - Rp 3.500.000</option>
+                                            <option value="4000000">> Rp 3.500.000</option>
+                                        </select>
+                                        <small class="form-text">Pilih range pengeluaran bulanan keluarga</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Kepemilikan Rumah <span class="required">*</span></label>
+                                        <select name="status_rumah" class="form-select" required>
+                                            <option value="">Pilih Status Kepemilikan</option>
+                                            <option value="Sewa">Sewa</option>
+                                            <option value="Keluarga">Keluarga</option>
+                                            <option value="Pribadi">Pribadi</option>
+                                        </select>
+                                        <small class="form-text">Status kepemilikan tempat tinggal</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Kelistrikan <span class="required">*</span></label>
+                                        <select name="daya_listrik" class="form-select" required>
+                                            <option value="">Pilih Status Kelistrikan</option>
+                                            <option value="Menumpang">Menumpang</option>
+                                            <option value="Pribadi 450 Watt">Pribadi 450 Watt</option>
+                                            <option value="Pribadi 900 Watt">Pribadi 900 Watt</option>
+                                            <option value="Pribadi 1200 Watt">Pribadi 1200 Watt</option>
+                                            <option value="Pribadi > 1200 Watt">Pribadi > 1200 Watt</option>
+                                        </select>
+                                        <small class="form-text">Status dan daya listrik rumah</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(1)">
+                                    <i class="fas fa-arrow-left me-2"></i> Kembali
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                                    Lanjut <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content" id="step-3">
+                        <div class="form-card">
+                            <h2 class="form-section-title">
+                                <i class="fas fa-users"></i> Data Keluarga
+                            </h2>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Jumlah Anggota Keluarga <span class="required">*</span></label>
+                                        <select name="jml_keluarga" class="form-select" required>
+                                            <option value="">Pilih Jumlah Anggota</option>
+                                            <option value="1">1 - 2 orang</option>
+                                            <option value="3">3 orang</option>
+                                            <option value="4">4 orang</option>
+                                            <option value="5">5 orang</option>
+                                            <option value="6">> 5 orang</option>
+                                        </select>
+                                        <small class="form-text">Termasuk Anda dalam satu KK</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Keberadaan Anak Usia Sekolah <span class="required">*</span></label>
+                                        <select name="jml_anak_sekolah" class="form-select" required>
+                                            <option value="">Pilih Jumlah Anak Sekolah</option>
+                                            <option value="0">Tidak ada</option>
+                                            <option value="1">1 orang</option>
+                                            <option value="2">2 orang</option>
+                                            <option value="3">3 orang</option>
+                                            <option value="4">> 3 orang</option>
+                                        </select>
+                                        <small class="form-text">Anak usia 5-18 tahun yang masih sekolah</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(2)">
+                                    <i class="fas fa-arrow-left me-2"></i> Kembali
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="nextStep(4)">
+                                    Lanjut <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content" id="step-4">
+                        <div class="form-card">
+                            <h2 class="form-section-title">
+                                <i class="fas fa-file-upload"></i> Dokumen Pendukung
+                            </h2>
+
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong>Ketentuan Upload Dokumen:</strong>
+                                    <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                                        <li>Format file: JPG, PNG, atau PDF</li>
+                                        <li>Ukuran maksimal: 2 MB per file</li>
+                                        <li>Pastikan foto/scan dokumen jelas dan terbaca</li>
+                                        <li>Dokumen bertanda <span class="required-badge">WAJIB</span> harus diupload</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                        <i class="fas fa-id-card" style="color: #3b82f6; margin-right: 6px;"></i>
+                                        KTP <span class="required-badge">WAJIB</span>
+                                    </label>
+                                    <label for="ktp" class="custom-file-upload" id="ktp-label">
+                                        <div class="file-upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="file-upload-text">
+                                            <strong>Klik untuk upload KTP</strong>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                        </div>
+                                        <input type="file" name="ktp" id="ktp" accept="image/*,application/pdf" required
+                                            style="display: none;" onchange="handleFileSelect(this, 'ktp')">
+                                        <div class="file-info" id="ktp-info"></div>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                        <i class="fas fa-users" style="color: #8b5cf6; margin-right: 6px;"></i>
+                                        Kartu Keluarga <span class="required-badge">WAJIB</span>
+                                    </label>
+                                    <label for="kk" class="custom-file-upload" id="kk-label">
+                                        <div class="file-upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="file-upload-text">
+                                            <strong>Klik untuk upload Kartu Keluarga</strong>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                        </div>
+                                        <input type="file" name="kk" id="kk" accept="image/*,application/pdf" required
+                                            style="display: none;" onchange="handleFileSelect(this, 'kk')">
+                                        <div class="file-info" id="kk-info"></div>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                        <i class="fas fa-money-check" style="color: #10b981; margin-right: 6px;"></i>
+                                        Slip Gaji / Bukti Penghasilan <span class="optional-badge">OPSIONAL</span>
+                                    </label>
+                                    <label for="slip_gaji" class="custom-file-upload" id="slip_gaji-label">
+                                        <div class="file-upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="file-upload-text">
+                                            <strong>Klik untuk upload Slip Gaji</strong>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                        </div>
+                                        <input type="file" name="slip_gaji" id="slip_gaji" accept="image/*,application/pdf"
+                                            style="display: none;" onchange="handleFileSelect(this, 'slip_gaji')">
+                                        <div class="file-info" id="slip_gaji-info"></div>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                        <i class="fas fa-home" style="color: #f59e0b; margin-right: 6px;"></i>
+                                        Foto Rumah <span class="optional-badge">OPSIONAL</span>
+                                    </label>
+                                    <label for="foto_rumah" class="custom-file-upload" id="foto_rumah-label">
+                                        <div class="file-upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="file-upload-text">
+                                            <strong>Klik untuk upload Foto Rumah</strong>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG atau PNG (Max. 2MB)</div>
+                                        </div>
+                                        <input type="file" name="foto_rumah" id="foto_rumah" accept="image/*"
+                                            style="display: none;" onchange="handleFileSelect(this, 'foto_rumah')">
+                                        <div class="file-info" id="foto_rumah-info"></div>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                        <i class="fas fa-file-alt" style="color: #ef4444; margin-right: 6px;"></i>
+                                        Surat Keterangan Rumah <span class="optional-badge">OPSIONAL</span>
+                                    </label>
+                                    <label for="surat_keterangan_rumah" class="custom-file-upload" id="surat_keterangan_rumah-label">
+                                        <div class="file-upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="file-upload-text">
+                                            <strong>Klik untuk upload Surat Keterangan</strong>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                        </div>
+                                        <input type="file" name="surat_keterangan_rumah" id="surat_keterangan_rumah"
+                                            accept="image/*,application/pdf" style="display: none;"
+                                            onchange="handleFileSelect(this, 'surat_keterangan_rumah')">
+                                        <div class="file-info" id="surat_keterangan_rumah-info"></div>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                        <i class="fas fa-bolt" style="color: #06b6d4; margin-right: 6px;"></i>
+                                        Rekening Listrik <span class="optional-badge">OPSIONAL</span>
+                                    </label>
+                                    <label for="rekening_listrik" class="custom-file-upload" id="rekening_listrik-label">
+                                        <div class="file-upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="file-upload-text">
+                                            <strong>Klik untuk upload Rekening Listrik</strong>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                        </div>
+                                        <input type="file" name="rekening_listrik" id="rekening_listrik"
+                                            accept="image/*,application/pdf" style="display: none;"
+                                            onchange="handleFileSelect(this, 'rekening_listrik')">
+                                        <div class="file-info" id="rekening_listrik-info"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-card mt-3">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <strong>Perhatian!</strong>
+                                    <p style="margin: 5px 0 0 0;">Pastikan semua data yang Anda masukkan sudah benar sebelum dikirim.</p>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between gap-3">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(3)">
+                                    <i class="fas fa-arrow-left me-2"></i> Kembali
+                                </button>
+
+                                <div class="d-flex gap-2">
+                                    <a href="index.php" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Batal
+                                    </a>
+                                    <button type="submit" name="submit_pengajuan" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-2"></i> Kirim Pengajuan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            <?php endif; ?>
         </div>
     </div>
 
