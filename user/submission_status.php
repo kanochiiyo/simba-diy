@@ -6,6 +6,30 @@ session_start();
 require_once(__DIR__ . "/../functions/authentication.php");
 require_once(__DIR__ . "/../functions/submission.php");
 
+function formatGajiLabel($nilai)
+{
+    if ($nilai < 1000000) return '< Rp 1.000.000';
+    if ($nilai < 2000000) return 'Rp 1.000.000 - Rp 1.999.000';
+    if ($nilai < 3500000) return 'Rp 2.000.000 - Rp 3.500.000';
+    return '> Rp 3.500.000';
+}
+
+function formatJumlahKeluargaLabel($nilai)
+{
+    if ($nilai <= 2) return '1 - 2 orang';
+    if ($nilai == 3) return '3 orang';
+    if ($nilai == 4) return '4 orang';
+    if ($nilai == 5) return '5 orang';
+    return '> 5 orang';
+}
+
+function formatAnakSekolahLabel($nilai)
+{
+    if ($nilai == 0) return 'Tidak ada';
+    if ($nilai <= 3) return $nilai . ' orang';
+    return '> 3 orang';
+}
+
 if (!isLogged() || isAdmin()) {
     header("Location: ../auth/login.php");
     exit;
@@ -137,132 +161,139 @@ $pengajuanList = getUserPengajuan($id_user);
                                             <div class="row g-3">
                                                 <div class="col-6">
                                                     <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Penghasilan</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);">Rp <?php echo number_format($pengajuan['gaji'], 0, ',', '.'); ?></div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);">
+                                                        <?php echo formatGajiLabel($pengajuan['gaji']); ?>
+                                                    </div>
                                                 </div>
                                                 <div class="col-6">
                                                     <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Pengeluaran</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);">Rp <?php echo number_format($pengajuan['pengeluaran'], 0, ',', '.'); ?></div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Status Rumah</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);"><?php echo $pengajuan['status_rumah']; ?></div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Daya Listrik</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);"><?php echo $pengajuan['daya_listrik']; ?> VA</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-6">
-                                    <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 20px; border-radius: 12px; height: 100%;">
-                                        <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
-                                            <i class="fas fa-users" style="color: #3b82f6;"></i>
-                                            Data Keluarga
-                                        </h5>
-                                        <div style="background-color: rgba(255, 255, 255, 0.7); padding: 16px; border-radius: 10px;">
-                                            <div class="row g-3">
-                                                <div class="col-6">
-                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Jumlah Keluarga</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['jml_keluarga']; ?> orang</div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Anak Usia Sekolah</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['jml_anak_sekolah']; ?> anak</div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Nomor KK</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['no_kk']; ?></div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Nomor HP</div>
-                                                    <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['no_hp']; ?></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Alamat -->
-                            <div style="background-color: #f9fafb; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-                                <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--color-text);">
-                                    <i class="fas fa-map-marker-alt" style="color: var(--color-primary); margin-right: 6px;"></i>
-                                    Alamat Lengkap
-                                </h5>
-                                <p style="font-size: 14px; color: #6b7280; margin: 0; line-height: 1.6;"><?php echo nl2br(htmlspecialchars($pengajuan['alamat'])); ?></p>
-                            </div>
-
-                            <!-- Dokumen -->
-                            <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--color-text);">
-                                <i class="fas fa-paperclip" style="color: var(--color-primary); margin-right: 8px;"></i>
-                                Dokumen yang Diupload
-                            </h5>
-                            <div class="row g-3">
-                                <?php
-                                $dokumenFields = [
-                                    'ktp' => ['label' => 'KTP', 'icon' => 'fa-id-card', 'color' => '#3b82f6'],
-                                    'kk' => ['label' => 'Kartu Keluarga', 'icon' => 'fa-users', 'color' => '#8b5cf6'],
-                                    'slip_gaji' => ['label' => 'Slip Gaji', 'icon' => 'fa-money-check', 'color' => '#10b981'],
-                                    'foto_rumah' => ['label' => 'Foto Rumah', 'icon' => 'fa-home', 'color' => '#f59e0b'],
-                                    'surat_keterangan_rumah' => ['label' => 'Surat Keterangan Rumah', 'icon' => 'fa-file-alt', 'color' => '#ef4444'],
-                                    'rekening_listrik' => ['label' => 'Rekening Listrik', 'icon' => 'fa-bolt', 'color' => '#06b6d4']
-                                ];
-
-                                foreach ($dokumenFields as $field => $info):
-                                    if (!empty($pengajuan[$field])):
-                                ?>
-                                        <div class="col-md-6 col-lg-4">
-                                            <div style="padding: 14px; background-color: #fff; border: 1px solid #e5e7eb; border-radius: 10px; display: flex; align-items: center; gap: 12px;">
-                                                <div style="width: 40px; height: 40px; background-color: <?php echo $info['color']; ?>20; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: <?php echo $info['color']; ?>; font-size: 18px;">
-                                                    <i class="fas <?php echo $info['icon']; ?>"></i>
-                                                </div>
-                                                <div style="flex: 1; min-width: 0;">
-                                                    <div style="font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 2px;"><?php echo $info['label']; ?></div>
-                                                    <div style="font-size: 11px; color: #10b981;">
-                                                        <i class="fas fa-check-circle"></i> Tersedia
+                                                    <div style="font-size: 14px; font-weight: 600; color: var(--color-text);">
+                                                        <?php echo formatGajiLabel($pengajuan['pengeluaran']); ?>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    <?php
-                                    else:
-                                    ?>
-                                        <div class="col-md-6 col-lg-4">
-                                            <div style="padding: 14px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; display: flex; align-items: center; gap: 12px; opacity: 0.6;">
-                                                <div style="width: 40px; height: 40px; background-color: #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 18px;">
-                                                    <i class="fas <?php echo $info['icon']; ?>"></i>
-                                                </div>
-                                                <div style="flex: 1; min-width: 0;">
-                                                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 2px;"><?php echo $info['label']; ?></div>
-                                                    <div style="font-size: 11px; color: #9ca3af;">
-                                                        <i class="fas fa-times-circle"></i> Tidak tersedia
-                                                    </div>
-                                                </div>
+                                            <div class="col-6">
+                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Status Rumah</div>
+                                                <div style="font-size: 14px; font-weight: 600; color: var(--color-text);"><?php echo $pengajuan['status_rumah']; ?></div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Daya Listrik</div>
+                                                <div style="font-size: 14px; font-weight: 600; color: var(--color-text);"><?php echo $pengajuan['daya_listrik']; ?> VA</div>
                                             </div>
                                         </div>
-                                <?php
-                                    endif;
-                                endforeach;
-                                ?>
-                            </div>
-
-                            <?php if ($pengajuan['status'] == 'Ditolak'): ?>
-                                <div class="alert alert-danger mt-4">
-                                    <i class="fas fa-exclamation-circle"></i>
-                                    <div>
-                                        <strong>Pengajuan Ditolak</strong>
-                                        <p style="margin: 8px 0 0 0;">Mohon maaf, pengajuan Anda ditolak. Anda dapat mengajukan kembali dengan data yang lebih lengkap dan akurat.</p>
                                     </div>
                                 </div>
-                            <?php endif; ?>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 20px; border-radius: 12px; height: 100%;">
+                                    <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-users" style="color: #3b82f6;"></i>
+                                        Data Keluarga
+                                    </h5>
+                                    <div style="background-color: rgba(255, 255, 255, 0.7); padding: 16px; border-radius: 10px;">
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;">
+                                                    <?php echo formatJumlahKeluargaLabel($pengajuan['jml_keluarga']); ?>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;">
+                                                    <?php echo formatAnakSekolahLabel($pengajuan['jml_anak_sekolah']); ?>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Nomor KK</div>
+                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['no_kk']; ?></div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Nomor HP</div>
+                                                <div style="font-size: 14px; font-weight: 600; color: #1e40af;"><?php echo $pengajuan['no_hp']; ?></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Alamat -->
+                        <div style="background-color: #f9fafb; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                            <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--color-text);">
+                                <i class="fas fa-map-marker-alt" style="color: var(--color-primary); margin-right: 6px;"></i>
+                                Alamat Lengkap
+                            </h5>
+                            <p style="font-size: 14px; color: #6b7280; margin: 0; line-height: 1.6;"><?php echo nl2br(htmlspecialchars($pengajuan['alamat'])); ?></p>
+                        </div>
+
+                        <!-- Dokumen -->
+                        <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--color-text);">
+                            <i class="fas fa-paperclip" style="color: var(--color-primary); margin-right: 8px;"></i>
+                            Dokumen yang Diupload
+                        </h5>
+                        <div class="row g-3">
+                            <?php
+                            $dokumenFields = [
+                                'ktp' => ['label' => 'KTP', 'icon' => 'fa-id-card', 'color' => '#3b82f6'],
+                                'kk' => ['label' => 'Kartu Keluarga', 'icon' => 'fa-users', 'color' => '#8b5cf6'],
+                                'slip_gaji' => ['label' => 'Slip Gaji', 'icon' => 'fa-money-check', 'color' => '#10b981'],
+                                'foto_rumah' => ['label' => 'Foto Rumah', 'icon' => 'fa-home', 'color' => '#f59e0b'],
+                                'surat_keterangan_rumah' => ['label' => 'Surat Keterangan Rumah', 'icon' => 'fa-file-alt', 'color' => '#ef4444'],
+                                'rekening_listrik' => ['label' => 'Rekening Listrik', 'icon' => 'fa-bolt', 'color' => '#06b6d4']
+                            ];
+
+                            foreach ($dokumenFields as $field => $info):
+                                if (!empty($pengajuan[$field])):
+                            ?>
+                                    <div class="col-md-6 col-lg-4">
+                                        <div style="padding: 14px; background-color: #fff; border: 1px solid #e5e7eb; border-radius: 10px; display: flex; align-items: center; gap: 12px;">
+                                            <div style="width: 40px; height: 40px; background-color: <?php echo $info['color']; ?>20; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: <?php echo $info['color']; ?>; font-size: 18px;">
+                                                <i class="fas <?php echo $info['icon']; ?>"></i>
+                                            </div>
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 2px;"><?php echo $info['label']; ?></div>
+                                                <div style="font-size: 11px; color: #10b981;">
+                                                    <i class="fas fa-check-circle"></i> Tersedia
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php
+                                else:
+                                ?>
+                                    <div class="col-md-6 col-lg-4">
+                                        <div style="padding: 14px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; display: flex; align-items: center; gap: 12px; opacity: 0.6;">
+                                            <div style="width: 40px; height: 40px; background-color: #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 18px;">
+                                                <i class="fas <?php echo $info['icon']; ?>"></i>
+                                            </div>
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 2px;"><?php echo $info['label']; ?></div>
+                                                <div style="font-size: 11px; color: #9ca3af;">
+                                                    <i class="fas fa-times-circle"></i> Tidak tersedia
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                            <?php
+                                endif;
+                            endforeach;
+                            ?>
+                        </div>
+
+                        <?php if ($pengajuan['status'] == 'Ditolak'): ?>
+                            <div class="alert alert-danger mt-4">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div>
+                                    <strong>Pengajuan Ditolak</strong>
+                                    <p style="margin: 8px 0 0 0;">Mohon maaf, pengajuan Anda ditolak. Anda dapat mengajukan kembali dengan data yang lebih lengkap dan akurat.</p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
         </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+    </div>
     </div>
 
     <script>

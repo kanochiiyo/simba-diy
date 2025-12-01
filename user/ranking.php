@@ -198,7 +198,7 @@ $sawStats = getSAWStatistics();
                                     <i class="fas fa-money-bill-wave"></i>
                                 </div>
                                 <div>
-                                    <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Penghasilan (25%)</h5>
+                                    <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Penghasilan (30%)</h5>
                                     <p style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.6;">Semakin rendah penghasilan, semakin tinggi prioritas</p>
                                     <span style="font-size: 11px; background-color: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; font-weight: 600;">COST</span>
                                 </div>
@@ -228,7 +228,7 @@ $sawStats = getSAWStatistics();
                                     <i class="fas fa-bolt"></i>
                                 </div>
                                 <div>
-                                    <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Daya Listrik (15%)</h5>
+                                    <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Daya Listrik (10%)</h5>
                                     <p style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.6;">Daya listrik rendah mendapat nilai lebih tinggi</p>
                                     <span style="font-size: 11px; background-color: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; font-weight: 600;">COST</span>
                                 </div>

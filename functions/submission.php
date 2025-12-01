@@ -2,11 +2,52 @@
 require_once(__DIR__ . "/connection.php");
 require_once(__DIR__ . "/saw.php");
 
-// Fungsi untuk membuat pengajuan baru
+function ensureUploadDirectory($id_user = null)
+{
+    $baseDir = __DIR__ . "/../uploads/dokumen/";
+
+    // Buat base directory jika belum ada
+    if (!is_dir($baseDir)) {
+        mkdir($baseDir, 0755, true);
+
+        // Buat .htaccess untuk security
+        $htaccess = $baseDir . ".htaccess";
+        file_put_contents($htaccess, "Options -Indexes\nRequire all denied\n<FilesMatch \"\\.(jpg|jpeg|png|pdf)$\">\n    Require all granted\n</FilesMatch>");
+
+        // Buat index.php untuk mencegah directory listing
+        $index = $baseDir . "index.php";
+        file_put_contents($index, "<?php header('HTTP/1.0 403 Forbidden'); exit; ?>");
+    }
+
+    // Jika ada ID user, buat folder khusus untuk user tersebut
+    if ($id_user) {
+        $userDir = $baseDir . "user_" . $id_user . "/";
+        if (!is_dir($userDir)) {
+            mkdir($userDir, 0755, true);
+        }
+        return $userDir;
+    }
+
+    return $baseDir;
+}
+
+function generateSafeFilename($fieldName, $originalName)
+{
+    // Ambil extension
+    $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+    // Validasi extension
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+    if (!in_array($extension, $allowedExtensions)) {
+        return false;
+    }
+
+    return $fieldName . '.' . $extension;
+}
+
 function createPengajuan($formData, $files)
 {
     $connection = getConnection();
-    $uploadDir = ensureUploadDirectory();
 
     $id = $_SESSION['id'];
     $nik = mysqli_real_escape_string($connection, $formData['nik']);
@@ -41,11 +82,8 @@ function createPengajuan($formData, $files)
 
     $id_pengajuan = $connection->insert_id;
 
-    // Upload dan simpan dokumen
-    $uploadDir = __DIR__ . "/../uploads/dokumen/";
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
-    }
+    // Buat folder khusus untuk user ini
+    $uploadDir = ensureUploadDirectory($id);
 
     $dokumen = [
         'ktp' => null,
@@ -60,18 +98,45 @@ function createPengajuan($formData, $files)
 
     foreach ($dokumen as $key => &$value) {
         if (isset($files[$key]) && $files[$key]['error'] === 0) {
-            $fileName = time() . '_' . $key . '_' . basename($files[$key]['name']);
+            // Generate nama file yang aman
+            $fileName = generateSafeFilename($key, $files[$key]['name']);
+
+            if ($fileName === false) {
+                echo "<script>alert('Format file $key tidak valid. Hanya JPG, PNG, dan PDF yang diizinkan.');</script>";
+                continue;
+            }
+
+            // Validasi ukuran file (max 2MB)
+            if ($files[$key]['size'] > 2 * 1024 * 1024) {
+                echo "<script>alert('Ukuran file $key terlalu besar. Maksimal 2MB.');</script>";
+                continue;
+            }
+
             $targetPath = $uploadDir . $fileName;
 
+            // Hapus file lama jika ada (untuk replace)
+            if (file_exists($targetPath)) {
+                unlink($targetPath);
+            }
+
             if (move_uploaded_file($files[$key]['tmp_name'], $targetPath)) {
-                $value = $fileName;
+                // Simpan path relatif ke database (untuk portabilitas)
+                $value = "user_" . $id . "/" . $fileName;
             }
         }
     }
 
     // Insert dokumen
     $insertDokumen = "INSERT INTO dokumen (id_pengajuan, ktp, kk, slip_gaji, foto_rumah, surat_keterangan_rumah, rekening_listrik, daftar_pengeluaran, kartu_pelajar_anak) 
-                      VALUES ('$id_pengajuan', '{$dokumen['ktp']}', '{$dokumen['kk']}', '{$dokumen['slip_gaji']}', '{$dokumen['foto_rumah']}', '{$dokumen['surat_keterangan_rumah']}', '{$dokumen['rekening_listrik']}', '{$dokumen['daftar_pengeluaran']}', '{$dokumen['kartu_pelajar_anak']}')";
+                      VALUES ('$id_pengajuan', " .
+        "'" . ($dokumen['ktp'] ?? '') . "', " .
+        "'" . ($dokumen['kk'] ?? '') . "', " .
+        "'" . ($dokumen['slip_gaji'] ?? '') . "', " .
+        "'" . ($dokumen['foto_rumah'] ?? '') . "', " .
+        "'" . ($dokumen['surat_keterangan_rumah'] ?? '') . "', " .
+        "'" . ($dokumen['rekening_listrik'] ?? '') . "', " .
+        "'" . ($dokumen['daftar_pengeluaran'] ?? '') . "', " .
+        "'" . ($dokumen['kartu_pelajar_anak'] ?? '') . "')";
 
     if (!$connection->query($insertDokumen)) {
         echo "<script>alert('Gagal menyimpan dokumen.');</script>";
@@ -79,6 +144,26 @@ function createPengajuan($formData, $files)
     }
 
     return $id_pengajuan;
+}
+
+function getDocumentPath($relativePath)
+{
+    if (empty($relativePath)) {
+        return null;
+    }
+
+    $baseDir = __DIR__ . "/../uploads/dokumen/";
+    return $baseDir . $relativePath;
+}
+
+function documentExists($relativePath)
+{
+    if (empty($relativePath)) {
+        return false;
+    }
+
+    $fullPath = getDocumentPath($relativePath);
+    return file_exists($fullPath);
 }
 
 // Fungsi untuk update status pengajuan (untuk admin)
@@ -99,7 +184,7 @@ function updatePengajuanStatus($id_pengajuan, $new_status, $id_petugas = null, $
                             VALUES ('$id_pengajuan', '$id_petugas', '$status_verifikasi', '$catatan_escaped')";
         $connection->query($insertVerifikasi);
 
-        // Jika terverifikasi, trigger perhitungan SAW
+        // Jika terverifikasi, trigger perhitungan SAW REAL-TIME
         if ($new_status == 'Terverifikasi') {
             calculateSAW();
         }
@@ -240,24 +325,4 @@ function validateNIK($nik)
 function validatePhoneNumber($phone)
 {
     return preg_match('/^[0-9]{10,15}$/', $phone);
-}
-
-function ensureUploadDirectory()
-{
-    $uploadDir = __DIR__ . "/../uploads/dokumen/";
-
-    if (!is_dir($uploadDir)) {
-        // Buat folder dengan permission 755
-        mkdir($uploadDir, 0755, true);
-
-        // Buat .htaccess untuk security
-        $htaccess = $uploadDir . ".htaccess";
-        file_put_contents($htaccess, "Options -Indexes\ndenylisting *.php");
-
-        // Buat index.php untuk mencegah directory listing
-        $index = $uploadDir . "index.php";
-        file_put_contents($index, "<?php header('HTTP/1.0 403 Forbidden'); exit; ?>");
-    }
-
-    return $uploadDir;
 }

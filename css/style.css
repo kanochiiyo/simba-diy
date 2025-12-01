@@ -1024,6 +1024,7 @@ body:has(.landing-page) {
 .btn-secondary:hover {
   background-color: #f9fafb;
   border-color: var(--color-primary);
+  color: var(--color-text);
 }
 
 .btn-success {
