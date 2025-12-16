@@ -102,22 +102,35 @@ function updateProgram($id, $data)
     return $connection->query($query);
 }
 
+// ✅ PERBAIKAN: Function closeProgram di program.php
+
 // Close program
 function closeProgram($id)
 {
     $connection = getConnection();
 
+    // ✅ FIXED: Tutup program dulu
     $query = "UPDATE program_bantuan SET status = 'Tutup' WHERE id = " . intval($id);
 
     if ($connection->query($query)) {
-        // Trigger perhitungan SAW untuk program ini
+        // ✅ FIXED: Trigger perhitungan SAW HANYA untuk program ini
         require_once(__DIR__ . "/saw.php");
-        return calculateSAW($id);
+
+        error_log("Closing program ID: $id - Starting SAW calculation");
+
+        $sawResult = calculateSAW($id);
+
+        if ($sawResult) {
+            error_log("Program closed successfully - SAW calculation completed for program ID: $id");
+        } else {
+            error_log("Program closed - SAW calculation failed or no data for program ID: $id");
+        }
+
+        return true;
     }
 
     return false;
 }
-
 // Delete program
 function deleteProgram($id)
 {

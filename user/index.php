@@ -138,18 +138,7 @@ $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->f
                         <?php echo $userRanking ? 'Skor: ' . number_format($userRanking['skor_total'], 2) : 'Belum ada ranking'; ?>
                     </div>
                 </div>
-                <?php if ($activeProgram && $programStats): ?>
-                    <div class="dashboard-card" style="border-left: 4px solid #10b981;">
-                        <div class="card-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46;">
-                            <i class="fas fa-clipboard-check"></i>
-                        </div>
-                        <div class="card-title">Program Aktif</div>
-                        <div class="card-value" style="font-size: 16px; color: #065f46;">
-                            <?php echo $programStats['terverifikasi']; ?> / <?php echo $activeProgram['kuota']; ?>
-                        </div>
-                        <div class="card-description">Kuota terisi</div>
-                    </div>
-                <?php endif; ?>
+
             </div>
 
             <?php if ($activeProgram): ?>
@@ -198,9 +187,9 @@ $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->f
                                     <i class="fas fa-plus-circle"></i> Daftar Program Ini
                                 </a>
                             <?php else: ?>
-                                <div style="padding: 16px; background-color: rgba(16, 185, 129, 0.1); border-radius: 12px;">
+                                <div class="d-flex justify-content-center align-items-center" style="padding: 16px; background-color: rgba(16, 185, 129, 0.1); border-radius: 12px;">
                                     <i class="fas fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
-                                    <div style="font-size: 14px; font-weight: 600; color: #065f46;">
+                                    <div style="font-size: 14px; font-weight: 600; color: #065f46; ">
                                         Anda Sudah Mendaftar
                                     </div>
                                 </div>

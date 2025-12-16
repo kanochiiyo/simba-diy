@@ -183,14 +183,20 @@ function documentExists($relativePath)
     return file_exists($fullPath);
 }
 
-// Fungsi untuk update status pengajuan (untuk admin)
+// ✅ PERBAIKAN: Ganti function updatePengajuanStatus di submission.php
+
 function updatePengajuanStatus($id_pengajuan, $new_status, $id_petugas = null, $catatan = null)
 {
     $connection = getConnection();
 
+    // ✅ AMBIL DATA PENGAJUAN DULU
+    $query = "SELECT id_program FROM pengajuan WHERE id = " . intval($id_pengajuan);
+    $result = $connection->query($query);
+    $pengajuan = $result->fetch_assoc();
+
     // Update status pengajuan
-    $query = "UPDATE pengajuan SET status = '$new_status' WHERE id = '$id_pengajuan'";
-    $connection->query($query);
+    $updateQuery = "UPDATE pengajuan SET status = '$new_status' WHERE id = " . intval($id_pengajuan);
+    $connection->query($updateQuery);
 
     // Jika status berubah menjadi Terverifikasi atau Ditolak, simpan ke tabel verifikasi
     if (($new_status == 'Terverifikasi' || $new_status == 'Ditolak') && $id_petugas) {
@@ -198,12 +204,21 @@ function updatePengajuanStatus($id_pengajuan, $new_status, $id_petugas = null, $
         $catatan_escaped = mysqli_real_escape_string($connection, $catatan);
 
         $insertVerifikasi = "INSERT INTO verifikasi (id_pengajuan, id_petugas, status, catatan) 
-                            VALUES ('$id_pengajuan', '$id_petugas', '$status_verifikasi', '$catatan_escaped')";
+                            VALUES (" . intval($id_pengajuan) . ", " . intval($id_petugas) . ", '$status_verifikasi', '$catatan_escaped')";
         $connection->query($insertVerifikasi);
 
-        // Jika terverifikasi, trigger perhitungan SAW REAL-TIME
-        if ($new_status == 'Terverifikasi') {
-            calculateSAW();
+        // ✅ FIXED: Jika terverifikasi, trigger perhitungan SAW untuk PROGRAM SPESIFIK
+        if ($new_status == 'Terverifikasi' && $pengajuan && $pengajuan['id_program']) {
+            require_once(__DIR__ . "/saw.php");
+
+            // Hitung SAW untuk program ini saja
+            $sawResult = calculateSAW($pengajuan['id_program']);
+
+            if ($sawResult) {
+                error_log("SAW auto-calculation SUCCESS for program ID: " . $pengajuan['id_program']);
+            } else {
+                error_log("SAW auto-calculation FAILED for program ID: " . $pengajuan['id_program']);
+            }
         }
     }
 
