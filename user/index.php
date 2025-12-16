@@ -16,6 +16,7 @@ $id_user = $_SESSION['id'];
 $stats = getUserDashboardStats($id_user);
 $userRanking = getUserRanking($id_user);
 $currentPengajuan = getPengajuanStatus($id_user);
+$hasRestriction = hasReceivedInLast3Periods($id_user);
 
 // ADDED: Get active program
 $activeProgram = getActiveProgram();
@@ -62,6 +63,17 @@ $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->f
                     <p style="margin: 5px 0 0 0;">Sistem Informasi Bantuan Sosial Daerah Istimewa Yogyakarta. Kelola pengajuan bantuan Anda dengan mudah dan transparan.</p>
                 </div>
             </div>
+            <?php if ($hasRestriction): ?>
+                <div class="alert" style="background-color: #fef3c7; border-color: #fde68a; color: #92400e;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Informasi Pembatasan Periode</strong>
+                        <p style="margin: 8px 0 0 0;">
+                            Anda sudah menerima bantuan dalam 3 periode terakhir. Anda tidak dapat mendaftar program baru sampai periode berikutnya tersedia.
+                        </p>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <?php if ($activeProgram): ?>
                 <div class="alert" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-color: #6ee7b7; color: #065f46;">

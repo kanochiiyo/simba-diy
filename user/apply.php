@@ -22,6 +22,11 @@ if (!$activeProgram) {
     $error = "Tidak ada program bantuan yang aktif saat ini. Silakan coba lagi nanti.";
 }
 
+if ($activeProgram && hasReceivedInLast3Periods($id_user)) {
+    $error = "Anda tidak dapat mendaftar karena sudah menerima bantuan dalam 3 periode terakhir. Silakan tunggu hingga periode berikutnya.";
+    $activeProgram = null; // Set null agar form tidak ditampilkan
+}
+
 // Cek apakah sudah ada pengajuan yang sedang diproses untuk program aktif
 if ($activeProgram) {
     $currentPengajuan = getPengajuanStatus($id_user);

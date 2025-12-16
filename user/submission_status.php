@@ -313,7 +313,7 @@ $pengajuanList = getUserPengajuan($id_user);
                 element.style.display = 'block';
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
-                button.innerHTML = '<i class="fas fa-eye-slash"></i> Sembunyikan Detail';
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Sembunyikan';
             } else {
                 element.style.display = 'none';
                 icon.classList.remove('fa-eye-slash');

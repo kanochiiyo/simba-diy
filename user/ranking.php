@@ -5,6 +5,7 @@ session_start();
 
 require_once(__DIR__ . "/../functions/authentication.php");
 require_once(__DIR__ . "/../functions/submission.php");
+require_once(__DIR__ . "/../functions/program.php");
 require_once(__DIR__ . "/../functions/saw.php");
 
 if (!isLogged() || isAdmin()) {
@@ -13,9 +14,24 @@ if (!isLogged() || isAdmin()) {
 }
 
 $id_user = $_SESSION['id'];
-$rankingList = getRanking();
-$userRanking = getUserRanking($id_user);
-$sawStats = getSAWStatistics();
+$filter_program = $_GET['program'] ?? 'latest';
+$closedPrograms = getAllPrograms('Tutup');
+$selectedProgram = null;
+if ($filter_program == 'latest') {
+    $selectedProgram = !empty($closedPrograms) ? $closedPrograms[0] : null;
+} else {
+    $selectedProgram = getProgramById(intval($filter_program));
+}
+
+$rankingList = [];
+$sawStats = ['total_peserta' => 0, 'skor_tertinggi' => 0, 'skor_terendah' => 0, 'rata_rata' => 0];
+
+if ($selectedProgram) {
+    $rankingList = getRanking($selectedProgram['id']);
+    $sawStats = getSAWStatistics($selectedProgram['id']);
+}
+
+$userRanking = $selectedProgram ? getUserRanking($id_user, $selectedProgram['id']) : null;
 ?>
 
 <!DOCTYPE html>
@@ -43,127 +59,187 @@ $sawStats = getSAWStatistics();
                 <p class="page-subtitle">Hasil perhitungan penerima bantuan berdasarkan metode SAW (Simple Additive Weighting)</p>
             </div>
 
-            <!-- User Ranking Alert -->
-            <?php if ($userRanking): ?>
-                <div class="alert alert-success">
-                    <i class="fas fa-trophy"></i>
+            <?php if (empty($closedPrograms)): ?>
+                <!-- ✅ ADDED: No Closed Programs Alert -->
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
                     <div>
-                        <strong>Selamat! Anda Masuk dalam Daftar Ranking</strong>
-                        <p style="margin: 8px 0 0 0;">Anda berada di peringkat <strong>#<?php echo $userRanking['peringkat']; ?></strong> dari <?php echo $sawStats['total_peserta']; ?> peserta dengan skor <strong><?php echo number_format($userRanking['skor_total'], 4); ?></strong></p>
+                        <strong>Belum Ada Program yang Ditutup</strong>
+                        <p style="margin: 8px 0 0 0;">Ranking akan tersedia setelah ada program yang ditutup dan perhitungan SAW selesai.</p>
                     </div>
                 </div>
             <?php else: ?>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <div>
-                        <strong>Informasi Ranking</strong>
-                        <p style="margin: 8px 0 0 0;">Data ranking Anda akan muncul setelah pengajuan diverifikasi dan proses perhitungan SAW selesai.</p>
+                <!-- ✅ ADDED: Program Filter -->
+                <div class="form-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <label class="form-label">Pilih Program</label>
+                            <select class="form-select" onchange="window.location.href='?program='+this.value">
+                                <option value="latest" <?php echo $filter_program == 'latest' ? 'selected' : ''; ?>>Program Terbaru</option>
+                                <?php foreach ($closedPrograms as $prog): ?>
+                                    <option value="<?php echo $prog['id']; ?>"
+                                        <?php echo ($selectedProgram && $selectedProgram['id'] == $prog['id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($prog['nama_program']); ?>
+                                        (<?php echo date('M Y', strtotime($prog['tanggal_mulai'])); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
-            <?php endif; ?>
 
-            <!-- Statistik SAW -->
-            <?php if ($sawStats['total_peserta'] > 0): ?>
-                <div class="dashboard-cards">
-                    <div class="dashboard-card">
-                        <div class="card-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="card-title">Total Peserta</div>
-                        <div class="card-value"><?php echo $sawStats['total_peserta']; ?></div>
-                        <div class="card-description">Pengajuan terverifikasi</div>
-                    </div>
-
-                    <div class="dashboard-card">
-                        <div class="card-icon">
-                            <i class="fas fa-arrow-up"></i>
-                        </div>
-                        <div class="card-title">Skor Tertinggi</div>
-                        <div class="card-value"><?php echo number_format($sawStats['skor_tertinggi'], 4); ?></div>
-                        <div class="card-description">Skor maksimal peserta</div>
-                    </div>
-
-                    <div class="dashboard-card">
-                        <div class="card-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="card-title">Rata-rata Skor</div>
-                        <div class="card-value"><?php echo number_format($sawStats['rata_rata'], 4); ?></div>
-                        <div class="card-description">Skor rata-rata peserta</div>
-                    </div>
-
-                    <div class="dashboard-card">
-                        <div class="card-icon">
-                            <i class="fas fa-arrow-down"></i>
-                        </div>
-                        <div class="card-title">Skor Terendah</div>
-                        <div class="card-value"><?php echo number_format($sawStats['skor_terendah'], 4); ?></div>
-                        <div class="card-description">Skor minimal peserta</div>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- Daftar Ranking -->
-            <div class="form-card">
-                <h2 class="form-section-title">
-                    <i class="fas fa-list-ol"></i> Daftar Ranking Penerima Bantuan
-                </h2>
-
-                <?php if (empty($rankingList)): ?>
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-inbox"></i>
-                        </div>
-                        <div class="empty-state-title">Belum Ada Data Ranking</div>
-                        <div class="empty-state-description">
-                            Data ranking akan muncul setelah proses verifikasi dan perhitungan SAW selesai dilakukan oleh admin.
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($rankingList as $ranking): ?>
-                        <?php
-                        $isCurrentUser = $ranking['nik'] == $_SESSION['nik'];
-                        $cardStyle = $isCurrentUser ? 'border: 2px solid var(--color-primary); background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-background) 100%);' : '';
-                        ?>
-                        <div class="ranking-card" style="<?php echo $cardStyle; ?>">
-                            <div class="ranking-header">
-                                <div class="ranking-number" style="<?php echo $isCurrentUser ? 'background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-btn-bg) 100%); color: white;' : ''; ?>">
-                                    <?php if ($ranking['peringkat'] <= 3): ?>
-                                        <i class="fas fa-trophy"></i>
-                                    <?php else: ?>
-                                        #<?php echo $ranking['peringkat']; ?>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="ranking-info">
-                                    <h3>
-                                        <?php echo htmlspecialchars($ranking['nama_lengkap']); ?>
-                                        <?php if ($isCurrentUser): ?>
-                                            <span class="status-badge" style="background-color: #dbeafe; color: #1e40af; margin-left: 8px; font-size: 12px;">
-                                                <i class="fas fa-user"></i> Anda
-                                            </span>
-                                        <?php endif; ?>
-                                    </h3>
-                                    <p>
-                                        <i class="fas fa-id-card" style="margin-right: 6px; color: #9ca3af;"></i>
-                                        NIK: <?php echo $ranking['nik']; ?>
-                                    </p>
-                                </div>
-                                <div class="ranking-score">
-                                    <div class="ranking-score-label">Skor SAW</div>
-                                    <div class="ranking-score-value"><?php echo number_format($ranking['skor_total'], 4); ?></div>
-                                    <?php if ($ranking['peringkat'] <= 3): ?>
-                                        <div style="text-align: center; margin-top: 8px;">
-                                            <span style="font-size: 12px; font-weight: 600; color: #10b981; background-color: #d1fae5; padding: 4px 12px; border-radius: 12px;">
-                                                <i class="fas fa-check-circle"></i> Top 3
-                                            </span>
-                                        </div>
-                                    <?php endif; ?>
+                <?php if ($selectedProgram): ?>
+                    <!-- ✅ ADDED: Program Info Banner -->
+                    <div class="form-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                        <h3 style="font-size: 22px; font-weight: 700; margin-bottom: 8px;">
+                            <?php echo htmlspecialchars($selectedProgram['nama_program']); ?>
+                        </h3>
+                        <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px;">
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Periode Program</div>
+                                <div style="font-size: 14px; font-weight: 600;">
+                                    <?php echo date('d M Y', strtotime($selectedProgram['tanggal_mulai'])); ?> -
+                                    <?php echo date('d M Y', strtotime($selectedProgram['tanggal_selesai'])); ?>
                                 </div>
                             </div>
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Kuota Program</div>
+                                <div style="font-size: 14px; font-weight: 600;"><?php echo $selectedProgram['kuota']; ?> Penerima</div>
+                            </div>
                         </div>
-                    <?php endforeach; ?>
+                    </div>
+
+                    <!-- User Ranking Alert -->
+                    <?php if ($userRanking): ?>
+                        <div class="alert alert-success">
+                            <i class="fas fa-trophy"></i>
+                            <div>
+                                <strong>Selamat! Anda Masuk dalam Daftar Ranking</strong>
+                                <p style="margin: 8px 0 0 0;">Anda berada di peringkat <strong>#<?php echo $userRanking['peringkat']; ?></strong> dari <?php echo $sawStats['total_peserta']; ?> peserta dengan skor <strong><?php echo number_format($userRanking['skor_total'], 4); ?></strong></p>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Informasi Ranking</strong>
+                                <p style="margin: 8px 0 0 0;">Anda tidak terdaftar dalam ranking program ini.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Statistik SAW -->
+                    <?php if ($sawStats['total_peserta'] > 0): ?>
+                        <div class="dashboard-cards">
+                            <div class="dashboard-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="card-title">Total Peserta</div>
+                                <div class="card-value"><?php echo $sawStats['total_peserta']; ?></div>
+                                <div class="card-description">Pengajuan terverifikasi</div>
+                            </div>
+
+                            <div class="dashboard-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-arrow-up"></i>
+                                </div>
+                                <div class="card-title">Skor Tertinggi</div>
+                                <div class="card-value"><?php echo number_format($sawStats['skor_tertinggi'], 4); ?></div>
+                                <div class="card-description">Skor maksimal peserta</div>
+                            </div>
+
+                            <div class="dashboard-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="card-title">Rata-rata Skor</div>
+                                <div class="card-value"><?php echo number_format($sawStats['rata_rata'], 4); ?></div>
+                                <div class="card-description">Skor rata-rata peserta</div>
+                            </div>
+
+                            <div class="dashboard-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-arrow-down"></i>
+                                </div>
+                                <div class="card-title">Skor Terendah</div>
+                                <div class="card-value"><?php echo number_format($sawStats['skor_terendah'], 4); ?></div>
+                                <div class="card-description">Skor minimal peserta</div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Daftar Ranking -->
+                    <div class="form-card">
+                        <h2 class="form-section-title">
+                            <i class="fas fa-list-ol"></i> Daftar Ranking Penerima Bantuan
+                        </h2>
+
+                        <?php if (empty($rankingList)): ?>
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-inbox"></i>
+                                </div>
+                                <div class="empty-state-title">Belum Ada Data Ranking</div>
+                                <div class="empty-state-description">
+                                    Belum ada pengajuan yang terverifikasi untuk program ini.
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($rankingList as $ranking): ?>
+                                <?php
+                                $isCurrentUser = $ranking['nik'] == $_SESSION['nik'];
+                                // ✅ ADDED: Check if within kuota
+                                $isWithinKuota = $ranking['peringkat'] <= $selectedProgram['kuota'];
+                                $cardStyle = $isCurrentUser ? 'border: 2px solid var(--color-primary); background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-background) 100%);' : '';
+                                ?>
+                                <div class="ranking-card" style="<?php echo $cardStyle; ?>">
+                                    <div class="ranking-header">
+                                        <div class="ranking-number" style="<?php echo $isCurrentUser ? 'background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-btn-bg) 100%); color: white;' : ''; ?>">
+                                            <?php if ($ranking['peringkat'] <= 3): ?>
+                                                <i class="fas fa-trophy"></i>
+                                            <?php else: ?>
+                                                #<?php echo $ranking['peringkat']; ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="ranking-info">
+                                            <h3>
+                                                <?php echo htmlspecialchars($ranking['nama_lengkap']); ?>
+                                                <?php if ($isCurrentUser): ?>
+                                                    <span class="status-badge" style="background-color: #dbeafe; color: #1e40af; margin-left: 8px; font-size: 12px;">
+                                                        <i class="fas fa-user"></i> Anda
+                                                    </span>
+                                                <?php endif; ?>
+                                                <!-- ✅ ADDED: Kuota badge -->
+                                                <?php if ($isWithinKuota): ?>
+                                                    <span class="status-badge" style="background-color: #d1fae5; color: #065f46; margin-left: 8px; font-size: 12px;">
+                                                        <i class="fas fa-check-circle"></i> Penerima
+                                                    </span>
+                                                <?php endif; ?>
+                                            </h3>
+                                            <p>
+                                                <i class="fas fa-id-card" style="margin-right: 6px; color: #9ca3af;"></i>
+                                                NIK: <?php echo $ranking['nik']; ?>
+                                            </p>
+                                        </div>
+                                        <div class="ranking-score">
+                                            <div class="ranking-score-label">Skor SAW</div>
+                                            <div class="ranking-score-value"><?php echo number_format($ranking['skor_total'], 4); ?></div>
+                                            <?php if ($ranking['peringkat'] <= 3): ?>
+                                                <div style="text-align: center; margin-top: 8px;">
+                                                    <span style="font-size: 12px; font-weight: 600; color: #10b981; background-color: #d1fae5; padding: 4px 12px; border-radius: 12px;">
+                                                        <i class="fas fa-check-circle"></i> Top 3
+                                                    </span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
-            </div>
+            <?php endif; ?>
 
             <!-- Info Metode SAW -->
             <div class="form-card">

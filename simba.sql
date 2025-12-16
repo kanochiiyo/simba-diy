@@ -41,16 +41,6 @@ CREATE TABLE `dokumen` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel dokumen pendukung';
 
 --
--- Dumping data for table `dokumen`
---
-
-INSERT INTO `dokumen` (`id`, `id_pengajuan`, `ktp`, `kk`, `slip_gaji`, `foto_rumah`, `surat_keterangan_rumah`, `rekening_listrik`, `daftar_pengeluaran`, `kartu_pelajar_anak`) VALUES
-(1, 1, 'user_2/ktp.png', 'user_2/kk.png', '', '', '', '', '', ''),
-(2, 2, 'user_2/ktp.pdf', 'user_2/kk.pdf', '', '', '', '', '', '');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `pengajuan`
 --
 
@@ -74,16 +64,6 @@ CREATE TABLE `pengajuan` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel pengajuan bantuan sosial';
 
 --
--- Dumping data for table `pengajuan`
---
-
-INSERT INTO `pengajuan` (`id`, `id_user`, `id_program`, `nik`, `no_kk`, `nama_lengkap`, `alamat`, `no_hp`, `gaji`, `status_rumah`, `daya_listrik`, `pengeluaran`, `jml_keluarga`, `jml_anak_sekolah`, `status`, `tanggal_dibuat`) VALUES
-(1, 2, NULL, '1010101010101010', '1010101010101011', 'NINDI ', 'yogyakarta', '089530230681', 500000.00, 'Sewa', 'Pribadi 450 Watt', 1500000.00, 3, 1, 'Ditolak', '2025-12-01 00:52:42'),
-(2, 2, 2, '1010101010101010', '1010101010101011', 'NINDI ', 'testing 2', '089530230681', 500000.00, 'Keluarga', 'Pribadi 450 Watt', 500000.00, 1, 2, 'Terverifikasi', '2025-12-01 20:01:24');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `program_bantuan`
 --
 
@@ -100,16 +80,6 @@ CREATE TABLE `program_bantuan` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel program bantuan';
 
 --
--- Dumping data for table `program_bantuan`
---
-
-INSERT INTO `program_bantuan` (`id`, `nama_program`, `deskripsi`, `kuota`, `tanggal_mulai`, `tanggal_selesai`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Program BLT Tahap 1 2025', 'Bantuan Langsung Tunai untuk masyarakat kurang mampu tahap 1 tahun 2025', 100, '2025-01-01', '2025-03-31', 'Tutup', '2025-12-01 19:20:16', '2025-12-01 19:23:47'),
-(2, 'Program BLT Tahap 2 2025', 'lorem ipsum', 10, '2025-12-02', '2026-02-02', 'Tutup', '2025-12-01 19:33:33', '2025-12-01 20:07:50');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `total_nilai`
 --
 
@@ -121,14 +91,6 @@ CREATE TABLE `total_nilai` (
   `tanggal_hitung` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu perhitungan dilakukan'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel hasil perhitungan SAW';
 
---
--- Dumping data for table `total_nilai`
---
-
-INSERT INTO `total_nilai` (`id`, `id_pengajuan`, `skor_total`, `peringkat`, `tanggal_hitung`) VALUES
-(2, 2, 1.0000, 1, '2025-12-01 20:07:50');
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `user`
@@ -148,8 +110,8 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`id`, `nama`, `nik`, `password`, `role`, `created_at`) VALUES
-(2, 'nindi', '1010101010101010', '$2y$10$VRhJ/mK3b/mGRb.U72.J4.NeTM3DxyIw6fQq9lZQqWXMmapKEi4NW', 'user', '2025-11-30 15:29:11'),
-(3, 'Administrator', '1234567890123456', '$2y$10$HdtXPDJzhxJgsLykMue/Ce/9z1AjrqB01lFdzd1jkvdeKoY2nBV9C', 'admin', '2025-12-01 19:04:40');
+(2, 'nindi', '1010101010101010', '$2y$10$VRhJ/mK3b/mGRb.U72.J4.NeTM3DxyIw6fQq9lZQqWXMmapKEi4NW', 'user', '2025-11-30 15:29:11'), -- dini123
+(3, 'Administrator', '1234567890123456', '$2y$10$HdtXPDJzhxJgsLykMue/Ce/9z1AjrqB01lFdzd1jkvdeKoY2nBV9C', 'admin', '2025-12-01 19:04:40'); -- admin123
 
 -- --------------------------------------------------------
 
@@ -165,18 +127,6 @@ CREATE TABLE `verifikasi` (
   `status` enum('Layak','Tidak Layak','Perlu Perbaikan') NOT NULL COMMENT 'Hasil verifikasi',
   `catatan` text DEFAULT NULL COMMENT 'Catatan dari petugas verifikasi'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabel hasil verifikasi';
-
---
--- Dumping data for table `verifikasi`
---
-
-INSERT INTO `verifikasi` (`id`, `id_pengajuan`, `id_petugas`, `tanggal`, `status`, `catatan`) VALUES
-(1, 1, 3, '2025-12-01 19:32:37', 'Tidak Layak', ''),
-(2, 2, 3, '2025-12-01 20:07:09', 'Layak', 'ok');
-
---
--- Indexes for dumped tables
---
 
 --
 -- Indexes for table `dokumen`
@@ -222,6 +172,41 @@ ALTER TABLE `verifikasi`
   ADD PRIMARY KEY (`id`),
   ADD KEY `id_pengajuan` (`id_pengajuan`),
   ADD KEY `id_petugas` (`id_petugas`);
+
+-- Index untuk pencarian program aktif
+CREATE INDEX idx_program_status ON program_bantuan(status, tanggal_mulai);
+
+-- Index untuk pencarian pengajuan berdasarkan user dan program
+CREATE INDEX idx_pengajuan_user_program ON pengajuan(id_user, id_program, status);
+
+-- Index untuk ranking queries
+CREATE INDEX idx_total_nilai_ranking ON total_nilai(peringkat, skor_total);
+
+DELIMITER //
+CREATE TRIGGER before_insert_program_bantuan
+BEFORE INSERT ON program_bantuan
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Aktif' THEN
+        IF EXISTS (SELECT 1 FROM program_bantuan WHERE status = 'Aktif') THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Hanya boleh ada 1 program aktif';
+        END IF;
+    END IF;
+END//
+
+CREATE TRIGGER before_update_program_bantuan
+BEFORE UPDATE ON program_bantuan
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Aktif' AND OLD.status != 'Aktif' THEN
+        IF EXISTS (SELECT 1 FROM program_bantuan WHERE status = 'Aktif' AND id != NEW.id) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Hanya boleh ada 1 program aktif';
+        END IF;
+    END IF;
+END//
+DELIMITER ;
 
 --
 -- AUTO_INCREMENT for dumped tables

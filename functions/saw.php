@@ -313,34 +313,37 @@ function getSAWStatistics($id_program = null)
     $stats = [];
 
     // Build WHERE clause
-    $whereClause = "";
+    $whereClause = "1=1";
     if ($id_program) {
-        $whereClause = " WHERE p.id_program = " . intval($id_program);
+        $whereClause = "p.id_program = " . intval($id_program);
     }
 
     // Total peserta
     $result = $connection->query("SELECT COUNT(*) as total FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
+                                  WHERE $whereClause");
     $stats['total_peserta'] = $result->fetch_assoc()['total'];
 
     // Skor tertinggi
     $result = $connection->query("SELECT MAX(tn.skor_total) as max_skor FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
+                                  WHERE $whereClause");
     $stats['skor_tertinggi'] = $result->fetch_assoc()['max_skor'] ?? 0;
 
     // Skor terendah
     $result = $connection->query("SELECT MIN(tn.skor_total) as min_skor FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
+                                  WHERE $whereClause");
     $stats['skor_terendah'] = $result->fetch_assoc()['min_skor'] ?? 0;
 
     // Rata-rata skor
     $result = $connection->query("SELECT AVG(tn.skor_total) as avg_skor FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id" . $whereClause);
+                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
+                                  WHERE $whereClause");
     $stats['rata_rata'] = $result->fetch_assoc()['avg_skor'] ?? 0;
 
     return $stats;
 }
-
 function autoCalculateSAW($id_pengajuan)
 {
     $connection = getConnection();

@@ -260,7 +260,7 @@ function getRanking($id_program = null, $limit = null)
 {
     $connection = getConnection();
 
-    $query = "SELECT p.nama_lengkap, p.nik, tn.skor_total, tn.peringkat, p.status, p.id_program
+    $query = "SELECT p.nama_lengkap, p.nik, tn.skor_total, tn.peringkat, p.status, p.id_program, p.id
               FROM total_nilai tn
               JOIN pengajuan p ON tn.id_pengajuan = p.id
               WHERE p.status = 'Terverifikasi'";
@@ -355,3 +355,4 @@ function validatePhoneNumber($phone)
 {
     return preg_match('/^[0-9]{10,15}$/', $phone);
 }
+

@@ -58,7 +58,7 @@ include($projectRoot . '/templates/header.php');
 
             <div class="input-group">
                 <label for="nik" style="display: block; font-size: 14px; font-weight: 600; color: var(--color-text); margin-bottom: 8px;">
-                 NIK
+                    NIK
                 </label>
                 <input type="text" name="nik" id="nik" placeholder="Masukkan NIK" required autofocus>
             </div>
@@ -68,7 +68,8 @@ include($projectRoot . '/templates/header.php');
                     Password
                 </label>
                 <input type="password" name="password" id="password" placeholder="Masukkan password" required>
-               
+                <i class="fa-solid fa-eye" id="togglePassword"></i>
+                <small class="form-text" style="color: #fff;">a</small>
             </div>
 
             <div class="form-options" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">

@@ -264,26 +264,6 @@ if (isset($_POST['change_password'])) {
                             </button>
                         </form>
                     </div>
-
-                    <!-- Danger Zone -->
-                    <div class="form-card" style="border: 2px solid #fee2e2;">
-                        <h2 class="form-section-title" style="color: #dc2626;">
-                            <i class="fas fa-exclamation-triangle"></i> Zona Berbahaya
-                        </h2>
-
-                        <div style="background-color: #fee2e2; padding: 20px; border-radius: 12px;">
-                            <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #991b1b;">
-                                <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
-                                Hapus Akun
-                            </h4>
-                            <p style="font-size: 14px; color: #7f1d1d; margin-bottom: 16px; line-height: 1.6;">
-                                Menghapus akun akan menghapus semua data pengajuan Anda secara permanen. Tindakan ini tidak dapat dibatalkan.
-                            </p>
-                            <button class="btn" style="background-color: #dc2626; color: white;" onclick="alert('Fitur hapus akun sedang dalam pengembangan. Silakan hubungi admin untuk menghapus akun.')">
-                                <i class="fas fa-trash-alt"></i> Hapus Akun Saya
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

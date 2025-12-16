@@ -131,27 +131,17 @@ $programs = getAllPrograms();
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label class="form-label">Tanggal Mulai <span class="required">*</span></label>
                                 <input type="date" name="tanggal_mulai" class="form-control" required>
                             </div>
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label class="form-label">Tanggal Selesai <span class="required">*</span></label>
                                 <input type="date" name="tanggal_selesai" class="form-control" required>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">Status <span class="required">*</span></label>
-                                <select name="status" class="form-select" required>
-                                    <option value="Aktif">Aktif</option>
-                                    <option value="Tutup">Tutup</option>
-                                </select>
                             </div>
                         </div>
                     </div>
