@@ -273,21 +273,20 @@ function getPengajuanStatus($id_user, $id_program = null)
 // Fungsi untuk mendapatkan ranking
 function getRanking($id_program = null, $limit = null)
 {
-    $connection = getConnection();
+    if ($id_program) {
+        return getRankingByProgram($id_program, $limit);
+    }
 
+    // Legacy: ambil dari program terbaru
+    $connection = getConnection();
     $query = "SELECT p.nama_lengkap, p.nik, tn.skor_total, tn.peringkat, p.status, p.id_program, p.id
               FROM total_nilai tn
               JOIN pengajuan p ON tn.id_pengajuan = p.id
-              WHERE p.status = 'Terverifikasi'";
-
-    if ($id_program) {
-        $query .= " AND p.id_program = " . intval($id_program);
-    }
-
-    $query .= " ORDER BY tn.peringkat ASC";
+              WHERE p.status = 'Terverifikasi'
+              ORDER BY tn.peringkat ASC";
 
     if ($limit) {
-        $query .= " LIMIT $limit";
+        $query .= " LIMIT " . intval($limit);
     }
 
     $result = $connection->query($query);
@@ -297,18 +296,20 @@ function getRanking($id_program = null, $limit = null)
 // Fungsi untuk mendapatkan ranking user tertentu
 function getUserRanking($id_user, $id_program = null)
 {
-    $connection = getConnection();
-
-    $query = "SELECT tn.skor_total, tn.peringkat, p.status, p.id_program
-              FROM total_nilai tn
-              JOIN pengajuan p ON tn.id_pengajuan = p.id
-              WHERE p.id_user = '$id_user' AND p.status = 'Terverifikasi'";
-
     if ($id_program) {
-        $query .= " AND p.id_program = " . intval($id_program);
+        return getUserRankingByProgram($id_user, $id_program);
     }
 
-    $query .= " ORDER BY tn.peringkat ASC LIMIT 1";
+    // Legacy: ambil dari program terbaru user
+    $connection = getConnection();
+    $query = "SELECT tn.skor_total, tn.peringkat, p.status, p.id_program, pb.kuota
+              FROM total_nilai tn
+              JOIN pengajuan p ON tn.id_pengajuan = p.id
+              JOIN program_bantuan pb ON p.id_program = pb.id
+              WHERE p.id_user = " . intval($id_user) . " 
+              AND p.status = 'Terverifikasi'
+              ORDER BY pb.tanggal_selesai DESC
+              LIMIT 1";
 
     $result = $connection->query($query);
     return $result->fetch_assoc();

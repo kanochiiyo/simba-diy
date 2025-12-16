@@ -15,42 +15,27 @@ if (!isLogged() || !isAdmin()) {
 
 $connection = getConnection();
 
-// Get filter
+// ✅ Get filter
 $filter_program = $_GET['program'] ?? 'latest';
 
-// Get programs (closed programs only)
+// ✅ Get CLOSED programs only (yang sudah ditutup)
 $closedPrograms = getAllPrograms('Tutup');
 
-// Determine which program to show
+// ✅ Determine selected program
 $selectedProgram = null;
 if ($filter_program == 'latest') {
-    // Get latest closed program
     $selectedProgram = !empty($closedPrograms) ? $closedPrograms[0] : null;
 } else {
     $selectedProgram = getProgramById(intval($filter_program));
 }
 
-// Get ranking for selected program
+// ✅ Get ranking untuk program yang dipilih
 $rankingList = [];
 $sawStats = ['total_peserta' => 0, 'skor_tertinggi' => 0, 'skor_terendah' => 0, 'rata_rata' => 0];
 
 if ($selectedProgram) {
-    $query = "SELECT p.nama_lengkap, p.nik, p.no_hp, tn.skor_total, tn.peringkat, p.status, p.id
-              FROM total_nilai tn
-              JOIN pengajuan p ON tn.id_pengajuan = p.id
-              WHERE p.id_program = " . intval($selectedProgram['id']) . " AND p.status = 'Terverifikasi'
-              ORDER BY tn.peringkat ASC";
-
-    $result = $connection->query($query);
-    $rankingList = $result->fetch_all(MYSQLI_ASSOC);
-
-    // Get statistics
-    if (!empty($rankingList)) {
-        $sawStats['total_peserta'] = count($rankingList);
-        $sawStats['skor_tertinggi'] = max(array_column($rankingList, 'skor_total'));
-        $sawStats['skor_terendah'] = min(array_column($rankingList, 'skor_total'));
-        $sawStats['rata_rata'] = array_sum(array_column($rankingList, 'skor_total')) / count($rankingList);
-    }
+    $rankingList = getRankingByProgram($selectedProgram['id']);
+    $sawStats = getSAWStatisticsByProgram($selectedProgram['id']);
 }
 ?>
 
@@ -82,7 +67,6 @@ if ($selectedProgram) {
             </div>
 
             <?php if (empty($closedPrograms)): ?>
-                <!-- No Closed Programs -->
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i>
                     <div>
@@ -109,6 +93,7 @@ if ($selectedProgram) {
                         <div class="col-md-6">
                             <label class="form-label">Pilih Program</label>
                             <select class="form-select" onchange="window.location.href='?program='+this.value">
+                                <option value="latest" <?php echo $filter_program == 'latest' ? 'selected' : ''; ?>>Program Terbaru</option>
                                 <?php foreach ($closedPrograms as $prog): ?>
                                     <option value="<?php echo $prog['id']; ?>"
                                         <?php echo ($selectedProgram && $selectedProgram['id'] == $prog['id']) ? 'selected' : ''; ?>>
@@ -124,9 +109,6 @@ if ($selectedProgram) {
                                 <div style="text-align: right;">
                                     <button onclick="window.print()" class="btn" style="background-color: #10b981; color: white;">
                                         <i class="fas fa-print"></i> Cetak Laporan
-                                    </button>
-                                    <button onclick="exportToExcel()" class="btn" style="background-color: #059669; color: white;">
-                                        <i class="fas fa-file-excel"></i> Export Excel
                                     </button>
                                 </div>
                             </div>
@@ -180,8 +162,8 @@ if ($selectedProgram) {
                                     <i class="fas fa-users"></i>
                                 </div>
                                 <div class="card-title">Total Penerima</div>
-                                <div class="card-value" style="color: #5b21b6;"><?php echo $sawStats['total_peserta']; ?></div>
-                                <div class="card-description">Terverifikasi layak</div>
+                                <div class="card-value" style="color: #5b21b6;"><?php echo min($sawStats['total_peserta'], $selectedProgram['kuota']); ?></div>
+                                <div class="card-description">Dari <?php echo $sawStats['total_peserta']; ?> peserta</div>
                             </div>
 
                             <div class="dashboard-card" style="border-left: 4px solid #10b981;">
@@ -218,7 +200,7 @@ if ($selectedProgram) {
                         <h2 class="form-section-title" style="color: #1e40af;">
                             <i class="fas fa-list-ol" style="color: #2563eb;"></i> Daftar Ranking Penerima
                             <span style="font-size: 14px; font-weight: normal; color: #6b7280; margin-left: 10px;">
-                                (Top <?php echo min($selectedProgram['kuota'], count($rankingList)); ?> dari <?php echo count($rankingList); ?> peserta)
+                                (<?php echo count($rankingList); ?> peserta terverifikasi)
                             </span>
                         </h2>
 
@@ -233,46 +215,7 @@ if ($selectedProgram) {
                                 </div>
                             </div>
                         <?php else: ?>
-                            <!-- Top 3 Winners -->
-                            <?php
-                            $topThree = array_slice($rankingList, 0, 3);
-                            $remaining = array_slice($rankingList, 3);
-                            ?>
-
-                            <?php if (!empty($topThree)): ?>
-                                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 24px; border-radius: 16px; margin-bottom: 24px;">
-                                    <h4 style="font-size: 18px; font-weight: 700; color: #92400e; margin-bottom: 20px; text-align: center;">
-                                        <i class="fas fa-trophy" style="color: #fbbf24;"></i> TOP 3 PENERIMA PRIORITAS
-                                    </h4>
-                                    <div class="row g-3">
-                                        <?php foreach ($topThree as $winner): ?>
-                                            <div class="col-md-4">
-                                                <div style="background-color: white; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #fbbf24; position: relative;">
-                                                    <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 50px; height: 50px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);">
-                                                        #<?php echo $winner['peringkat']; ?>
-                                                    </div>
-                                                    <div style="margin-top: 30px;">
-                                                        <h5 style="font-size: 16px; font-weight: 600; color: var(--color-text); margin-bottom: 8px;">
-                                                            <?php echo htmlspecialchars($winner['nama_lengkap']); ?>
-                                                        </h5>
-                                                        <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">
-                                                            NIK: <?php echo $winner['nik']; ?>
-                                                        </p>
-                                                        <div style="background-color: #fef3c7; padding: 8px; border-radius: 8px;">
-                                                            <div style="font-size: 11px; color: #92400e; margin-bottom: 4px;">Skor SAW</div>
-                                                            <div style="font-size: 20px; font-weight: 700; color: #92400e;">
-                                                                <?php echo number_format($winner['skor_total'], 4); ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <!-- Full Ranking Table -->
+                            <!-- ✅ Tampilkan SEMUA ranking (transparan) -->
                             <div class="table-responsive">
                                 <table class="table" id="rankingTable">
                                     <thead>
@@ -288,18 +231,19 @@ if ($selectedProgram) {
                                     </thead>
                                     <tbody>
                                         <?php foreach ($rankingList as $ranking):
-                                            $isTopKuota = $ranking['peringkat'] <= $selectedProgram['kuota'];
+                                            // ✅ Penerima = yang masuk kuota
+                                            $isPenerima = $ranking['peringkat'] <= $selectedProgram['kuota'];
                                         ?>
-                                            <tr style="<?php echo $isTopKuota ? 'background-color: #f0fdf4;' : ''; ?>">
+                                            <tr style="<?php echo $isPenerima ? 'background-color: #f0fdf4;' : ''; ?>">
                                                 <td>
                                                     <div style="display: flex; align-items: center; gap: 8px;">
                                                         <?php if ($ranking['peringkat'] <= 3): ?>
                                                             <i class="fas fa-trophy" style="color: #fbbf24; font-size: 18px;"></i>
                                                         <?php endif; ?>
-                                                        <strong style="font-size: 18px; color: <?php echo $isTopKuota ? '#10b981' : '#6b7280'; ?>;">
+                                                        <strong style="font-size: 18px; color: <?php echo $isPenerima ? '#10b981' : '#6b7280'; ?>;">
                                                             #<?php echo $ranking['peringkat']; ?>
                                                         </strong>
-                                                        <?php if ($isTopKuota): ?>
+                                                        <?php if ($isPenerima): ?>
                                                             <span style="font-size: 10px; background-color: #10b981; color: white; padding: 2px 6px; border-radius: 6px; font-weight: 600;">
                                                                 PENERIMA
                                                             </span>
@@ -334,8 +278,8 @@ if ($selectedProgram) {
                             <div style="margin-top: 24px; padding: 16px; background-color: #f9fafb; border-radius: 12px; border-left: 4px solid #2563eb;">
                                 <p style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.6;">
                                     <i class="fas fa-info-circle" style="color: #2563eb; margin-right: 6px;"></i>
-                                    <strong>Keterangan:</strong> Penerima dengan latar belakang hijau adalah yang masuk dalam kuota program (Top <?php echo $selectedProgram['kuota']; ?>).
-                                    Sisanya adalah cadangan jika ada penerima yang mengundurkan diri.
+                                    <strong>Keterangan:</strong> Peserta dengan latar hijau dan badge "PENERIMA" adalah yang masuk dalam kuota program (Top <?php echo $selectedProgram['kuota']; ?>).
+                                    Sisanya adalah cadangan jika ada penerima yang mengundurkan diri. Semua data ditampilkan untuk transparansi.
                                 </p>
                             </div>
                         <?php endif; ?>
@@ -390,9 +334,12 @@ if ($selectedProgram) {
                                 <i class="fas fa-info-circle"></i> Rumus Perhitungan
                             </h5>
                             <p style="font-size: 13px; color: #92400e; line-height: 1.8; margin: 0;">
-                                Nilai SAW = Σ (Nilai Normalisasi × Bobot Kriteria)
+                                <strong>Vi = Σ(wj × rij)</strong>
                                 <br><br>
-                                Semakin tinggi skor, semakin tinggi prioritas penerima bantuan.
+                                dimana:<br>
+                                - Vi = skor akhir<br>
+                                - wj = bobot kriteria<br>
+                                - rij = nilai normalisasi
                             </p>
                         </div>
                     </div>
@@ -400,12 +347,6 @@ if ($selectedProgram) {
             </div>
         </div>
     </div>
-
-    <script>
-        function exportToExcel() {
-            alert('Fitur export Excel sedang dalam pengembangan');
-        }
-    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
 </body>
