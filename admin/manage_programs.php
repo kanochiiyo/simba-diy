@@ -258,12 +258,48 @@ $programs = getAllPrograms();
     </div>
 
     <script>
-        function viewProgram(id) {
-            const modal = new bootstrap.Modal(document.getElementById('viewProgramModal'));
-            modal.show();
+        // Instance modal global agar tidak duplicate instance
+        let programModal;
 
-            // Load program details via AJAX (simplified version)
-            // In production, you'd fetch this via AJAX
+        function viewProgram(id) {
+            // Inisialisasi modal jika belum ada
+            const modalEl = document.getElementById('viewProgramModal');
+            if (!programModal) {
+                programModal = new bootstrap.Modal(modalEl);
+            }
+            programModal.show();
+
+            const content = document.getElementById('programDetailContent');
+
+            // Tampilkan Loading
+            content.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Memuat data program...</p>
+                </div>`;
+
+            // Fetch Data via AJAX
+            fetch(`ajax_get_program.php?id=${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    content.innerHTML = `
+                        <div class="alert alert-danger text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i><br>
+                            Gagal memuat data program.<br>
+                            <small class="text-muted">${error.message}</small>
+                        </div>`;
+                });
         }
 
         function closeProgram(id, nama) {

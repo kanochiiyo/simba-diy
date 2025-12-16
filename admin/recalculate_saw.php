@@ -4,8 +4,7 @@
  * ============================================
  * TOOL RECALCULATE SAW - ADMIN ONLY
  * File: admin/recalculate_saw.php
- * 
- * Gunakan ini untuk recalculate SAW secara manual
+ * * Gunakan ini untuk recalculate SAW secara manual
  * jika terjadi error atau data tidak konsisten
  * ============================================
  */
@@ -45,7 +44,7 @@ if (isset($_POST['recalculate'])) {
             $connection->query($deleteQuery);
             $results[] = "🗑️ Data SAW lama dihapus";
 
-            // Hitung ulang
+            // Hitung ulang (Fungsi ini harus sudah support filter duplikat user)
             $sawResult = calculateSAW($program_id);
 
             if ($sawResult) {
@@ -56,9 +55,9 @@ if (isset($_POST['recalculate'])) {
                 $countResult = $connection->query($countQuery);
                 $count = $countResult->fetch_assoc()['total'];
 
-                $results[] = "✅ Berhasil! $count pengajuan telah dihitung dan diranking";
+                $results[] = "✅ Berhasil! $count user telah dihitung dan diranking";
             } else {
-                $results[] = "❌ Gagal menghitung SAW - Tidak ada data terverifikasi";
+                $results[] = "❌ Gagal menghitung SAW - Tidak ada data terverifikasi atau error sistem";
             }
         } else {
             $results[] = "❌ Program tidak ditemukan";
@@ -114,7 +113,6 @@ $programs = getAllPrograms();
                 <p class="page-subtitle">Tool untuk menghitung ulang ranking SAW secara manual</p>
             </div>
 
-            <!-- WARNING -->
             <div class="alert" style="background-color: #fee2e2; border-color: #fecaca; color: #991b1b;">
                 <i class="fas fa-exclamation-triangle"></i>
                 <div>
@@ -130,7 +128,6 @@ $programs = getAllPrograms();
                 </div>
             </div>
 
-            <!-- RESULTS -->
             <?php if (!empty($results)): ?>
                 <div class="form-card">
                     <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
@@ -144,7 +141,6 @@ $programs = getAllPrograms();
                 </div>
             <?php endif; ?>
 
-            <!-- FORM -->
             <div class="form-card">
                 <h2 class="form-section-title" style="color: #1e40af;">
                     <i class="fas fa-calculator" style="color: #2563eb;"></i> Pilih Program untuk Recalculate
@@ -173,7 +169,7 @@ $programs = getAllPrograms();
                             <ol style="margin: 8px 0 0 20px; padding: 0;">
                                 <li>Data SAW lama untuk program ini akan dihapus</li>
                                 <li>Sistem akan mengambil semua pengajuan <strong>Terverifikasi</strong></li>
-                                <li>Perhitungan SAW dilakukan dengan metode yang benar</li>
+                                <li>Duplikasi user akan difilter (ambil pengajuan terbaru)</li>
                                 <li>Ranking baru akan disimpan ke database</li>
                             </ol>
                         </div>
@@ -191,23 +187,30 @@ $programs = getAllPrograms();
                 </form>
             </div>
 
-            <!-- DEBUG INFO -->
             <div class="form-card">
                 <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
-                    <i class="fas fa-bug" style="color: #ef4444;"></i> Debug Information
+                    <i class="fas fa-bug" style="color: #ef4444;"></i> Debug Information (Cek Sinkronisasi Data)
                 </h3>
 
                 <?php
                 // Show current SAW data per program
                 foreach ($programs as $prog) {
                     $progId = $prog['id'];
-                    $query = "SELECT COUNT(DISTINCT tn.id_pengajuan) as total_ranking,
-                             COUNT(p.id) as total_verified
-                             FROM pengajuan p
-                             LEFT JOIN total_nilai tn ON p.id = tn.id_pengajuan
-                             WHERE p.id_program = $progId AND p.status = 'Terverifikasi'";
+
+                    // ✅ UPDATED QUERY: Menghitung Unique USER, bukan Unique Submission ID
+                    // Agar kalau 1 user punya 2 pengajuan (1 diterima, 1 duplikat), tetap dianggap SINKRON.
+                    $query = "SELECT 
+                                COUNT(DISTINCT p.id_user) as total_user_verified,
+                                COUNT(DISTINCT CASE WHEN tn.id IS NOT NULL THEN p.id_user END) as total_user_ranked
+                              FROM pengajuan p
+                              LEFT JOIN total_nilai tn ON p.id = tn.id_pengajuan
+                              WHERE p.id_program = $progId AND p.status = 'Terverifikasi'";
+
                     $result = $connection->query($query);
                     $debugData = $result->fetch_assoc();
+
+                    // Cek sinkronisasi berdasarkan USER
+                    $isSync = $debugData['total_user_verified'] == $debugData['total_user_ranked'];
                 ?>
                     <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 12px;">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">
@@ -217,15 +220,15 @@ $programs = getAllPrograms();
                             </span>
                         </div>
                         <div style="font-size: 13px; color: #6b7280;">
-                            Pengajuan Terverifikasi: <strong><?php echo $debugData['total_verified']; ?></strong> |
-                            Data di total_nilai: <strong><?php echo $debugData['total_ranking']; ?></strong>
-                            <?php if ($debugData['total_verified'] != $debugData['total_ranking']): ?>
+                            User Terverifikasi: <strong><?php echo $debugData['total_user_verified']; ?></strong> Orang |
+                            User Diranking: <strong><?php echo $debugData['total_user_ranked']; ?></strong> Orang
+                            <?php if (!$isSync): ?>
                                 <span style="color: #dc2626; font-weight: 600; margin-left: 8px;">
-                                    ⚠️ TIDAK SINKRON!
+                                    ⚠️ TIDAK SINKRON! (Ada user terverifikasi yang belum diranking)
                                 </span>
                             <?php else: ?>
                                 <span style="color: #10b981; font-weight: 600; margin-left: 8px;">
-                                    ✓ OK
+                                    ✓ OK (Semua user sudah dapat nilai)
                                 </span>
                             <?php endif; ?>
                         </div>

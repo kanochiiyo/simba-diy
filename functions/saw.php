@@ -1,47 +1,21 @@
 <?php
 require_once(__DIR__ . "/connection.php");
 
-// ✅ FIXED: Bobot sesuai paper (total harus 100% = 1.0)
+// ==========================================
+// DEFINISI KRITERIA & BOBOT
+// ==========================================
 define('KRITERIA', [
-    'gaji' => [
-        'nama' => 'Penghasilan',
-        'type' => 'cost',
-        'weight' => 0.30,  // 30%
-        'satuan' => 'Rupiah'
-    ],
-    'status_rumah' => [
-        'nama' => 'Kepemilikan Rumah',
-        'type' => 'cost',
-        'weight' => 0.15,  // 15%
-        'satuan' => 'Kategori'
-    ],
-    'daya_listrik' => [
-        'nama' => 'Kelistrikan',
-        'type' => 'cost',
-        'weight' => 0.10,  // 10%
-        'satuan' => 'Status'
-    ],
-    'pengeluaran' => [
-        'nama' => 'Pengeluaran',
-        'type' => 'cost',
-        'weight' => 0.20,  // 20%
-        'satuan' => 'Rupiah'
-    ],
-    'jml_keluarga' => [
-        'nama' => 'Jumlah Anggota Keluarga',
-        'type' => 'benefit',
-        'weight' => 0.15,  // 15%
-        'satuan' => 'Orang'
-    ],
-    'jml_anak_sekolah' => [
-        'nama' => 'Keberadaan Anak Usia Sekolah',
-        'type' => 'benefit',
-        'weight' => 0.10,  // 10%
-        'satuan' => 'Anak'
-    ]
+    'gaji' => ['type' => 'cost', 'weight' => 0.30],
+    'status_rumah' => ['type' => 'cost', 'weight' => 0.15],
+    'daya_listrik' => ['type' => 'cost', 'weight' => 0.10],
+    'pengeluaran' => ['type' => 'cost', 'weight' => 0.20],
+    'jml_keluarga' => ['type' => 'benefit', 'weight' => 0.15],
+    'jml_anak_sekolah' => ['type' => 'benefit', 'weight' => 0.10]
 ]);
 
-// ✅ Tabel konversi sesuai paper
+// ==========================================
+// TABEL KONVERSI
+// ==========================================
 define('KONVERSI_PENDAPATAN', [
     ['min' => 0, 'max' => 1000000, 'nilai' => 5],
     ['min' => 1000000, 'max' => 2000000, 'nilai' => 4],
@@ -86,8 +60,12 @@ define('KONVERSI_ANAK_SEKOLAH', [
     4 => 5
 ]);
 
+// ==========================================
+// HELPER FUNCTIONS
+// ==========================================
 function konversiNilaiRange($nilai, $konversiArray)
 {
+    $nilai = floatval($nilai); // Pastikan angka
     foreach ($konversiArray as $range) {
         if ($nilai >= $range['min'] && $nilai <= $range['max']) {
             return $range['nilai'];
@@ -98,40 +76,49 @@ function konversiNilaiRange($nilai, $konversiArray)
 
 function konversiAnakSekolah($jumlah)
 {
-    if ($jumlah >= 4) {
-        return 5;
-    }
+    $jumlah = intval($jumlah);
+    if ($jumlah >= 4) return 5;
     return KONVERSI_ANAK_SEKOLAH[$jumlah] ?? 1;
 }
 
-/**
- * ✅ FIXED: Perhitungan SAW sesuai paper
- * Langkah:
- * 1. Konversi nilai mentah ke nilai kriteria (1-5)
- * 2. Normalisasi matriks
- * 3. Kalikan dengan bobot
- * 4. Ranking berdasarkan skor total
- */
+// ==========================================
+// CORE CALCULATION
+// ==========================================
+
 function calculateSAW($id_program)
 {
     $connection = getConnection();
+    $id_program = intval($id_program);
 
-    // ✅ STEP 1: Ambil data pengajuan TERVERIFIKASI dari program ini
+    // 1. Ambil Data Terverifikasi (Urutkan Terbaru)
     $query = "SELECT * FROM pengajuan 
               WHERE status = 'Terverifikasi' 
-              AND id_program = " . intval($id_program);
+              AND id_program = $id_program
+              ORDER BY tanggal_dibuat DESC";
 
     $result = $connection->query($query);
 
+    // Jika tidak ada data, bersihkan nilai lama saja
     if (!$result || $result->num_rows == 0) {
-        error_log("SAW: No verified data for program $id_program");
-        return false;
+        $connection->query("DELETE FROM total_nilai WHERE id_pengajuan IN (SELECT id FROM pengajuan WHERE id_program = $id_program)");
+        return true;
     }
 
-    $pengajuanData = $result->fetch_all(MYSQLI_ASSOC);
-    error_log("SAW: Processing " . count($pengajuanData) . " submissions for program $id_program");
+    $rawData = $result->fetch_all(MYSQLI_ASSOC);
 
-    // ✅ STEP 2: Konversi nilai mentah ke nilai kriteria (1-5)
+    // 2. Filter Duplikasi (Hanya ambil 1 pengajuan terbaru per User)
+    $pengajuanData = [];
+    $seenUsers = [];
+
+    foreach ($rawData as $row) {
+        $userId = $row['id_user'];
+        if (!in_array($userId, $seenUsers)) {
+            $seenUsers[] = $userId;
+            $pengajuanData[] = $row;
+        }
+    }
+
+    // 3. Konversi Data
     $dataTerkonversi = [];
     foreach ($pengajuanData as $data) {
         $converted = [
@@ -146,48 +133,61 @@ function calculateSAW($id_program)
         $dataTerkonversi[] = $converted;
     }
 
-    // ✅ STEP 3: Hitung nilai min/max untuk normalisasi
+    // 4. Cari Nilai Min/Max
     $nilaiMax = [];
     $nilaiMin = [];
 
     foreach (array_keys(KRITERIA) as $key) {
         $values = array_column($dataTerkonversi, $key);
-
-        if (KRITERIA[$key]['type'] == 'benefit') {
-            $nilaiMax[$key] = max($values);
+        // Proteksi jika array kosong
+        if (empty($values)) {
+            $nilaiMax[$key] = 1;
+            $nilaiMin[$key] = 1;
         } else {
-            $nilaiMin[$key] = min($values);
+            if (KRITERIA[$key]['type'] == 'benefit') {
+                $nilaiMax[$key] = max($values);
+                // Cegah pembagian dengan nol
+                if ($nilaiMax[$key] == 0) $nilaiMax[$key] = 1;
+            } else {
+                $nilaiMin[$key] = min($values);
+            }
         }
     }
 
-    // ✅ STEP 4: Normalisasi matriks
+    // 5. Normalisasi Matriks
     $dataNormalisasi = [];
     foreach ($dataTerkonversi as $data) {
         $normalized = ['id_pengajuan' => $data['id_pengajuan']];
-
         foreach (array_keys(KRITERIA) as $key) {
-            $nilai = $data[$key];
-            $kriteria = KRITERIA[$key];
+            $nilai = floatval($data[$key]);
 
-            if ($kriteria['type'] == 'benefit') {
-                // Benefit: nilai / nilai_max
-                $normalized[$key] = $nilaiMax[$key] > 0 ? $nilai / $nilaiMax[$key] : 0;
+            if (KRITERIA[$key]['type'] == 'benefit') {
+                // Benefit: Nilai / Max
+                $normalized[$key] = $nilai / $nilaiMax[$key];
             } else {
-                // Cost: nilai_min / nilai
-                $normalized[$key] = $nilai > 0 ? $nilaiMin[$key] / $nilai : 0;
+                // Cost: Min / Nilai
+                // ✅ FIX: Jika Nilai 0 pada Cost (sangat baik), anggap skor 1 (sempurna)
+                if ($nilai <= 0) {
+                    $normalized[$key] = 1;
+                } else {
+                    $normalized[$key] = $nilaiMin[$key] / $nilai;
+                }
             }
         }
-
         $dataNormalisasi[] = $normalized;
     }
 
-    // ✅ STEP 5: Hitung skor total (Vi = Σ(wj × rij))
+    // 6. Hitung Skor Total
     $hasilAkhir = [];
     foreach ($dataNormalisasi as $data) {
         $skorTotal = 0;
-
         foreach (array_keys(KRITERIA) as $key) {
             $skorTotal += $data[$key] * KRITERIA[$key]['weight'];
+        }
+
+        // ✅ SAFETY: Pastikan skor valid (bukan NaN)
+        if (is_nan($skorTotal) || is_infinite($skorTotal)) {
+            $skorTotal = 0;
         }
 
         $hasilAkhir[] = [
@@ -196,57 +196,51 @@ function calculateSAW($id_program)
         ];
     }
 
-    // ✅ STEP 6: Sort descending (skor tertinggi = peringkat 1)
+    // 7. Ranking
     usort($hasilAkhir, function ($a, $b) {
         return $b['skor_total'] <=> $a['skor_total'];
     });
 
-    // ✅ STEP 7: Assign peringkat
     foreach ($hasilAkhir as $index => &$hasil) {
         $hasil['peringkat'] = $index + 1;
     }
 
-    // ✅ STEP 8: Simpan ke database
-    // Hapus data lama untuk program ini
-    $deleteQuery = "DELETE tn FROM total_nilai tn 
-                   JOIN pengajuan p ON tn.id_pengajuan = p.id 
-                   WHERE p.id_program = " . intval($id_program);
-    $connection->query($deleteQuery);
-
-    // Insert data baru
+    // 8. Simpan ke Database
     $connection->begin_transaction();
-
     try {
-        foreach ($hasilAkhir as $hasil) {
-            $id_pengajuan = intval($hasil['id_pengajuan']);
-            $skor_total = floatval($hasil['skor_total']);
-            $peringkat = intval($hasil['peringkat']);
+        // Hapus data lama untuk program ini (Gunakan Subquery Delete yang lebih aman)
+        $deleteSql = "DELETE FROM total_nilai WHERE id_pengajuan IN (
+                        SELECT id FROM pengajuan WHERE id_program = $id_program
+                      )";
+        $connection->query($deleteSql);
 
-            $insertQuery = "INSERT INTO total_nilai (id_pengajuan, skor_total, peringkat, tanggal_hitung) 
-                           VALUES ($id_pengajuan, $skor_total, $peringkat, NOW())";
-            $connection->query($insertQuery);
+        // Insert data baru
+        $stmt = $connection->prepare("INSERT INTO total_nilai (id_pengajuan, skor_total, peringkat, tanggal_hitung) VALUES (?, ?, ?, NOW())");
+
+        foreach ($hasilAkhir as $hasil) {
+            $stmt->bind_param("idi", $hasil['id_pengajuan'], $hasil['skor_total'], $hasil['peringkat']);
+            $stmt->execute();
         }
 
         $connection->commit();
-        error_log("SAW Calculation SUCCESS - Program $id_program - " . count($hasilAkhir) . " records");
         return true;
     } catch (Exception $e) {
         $connection->rollback();
-        error_log("SAW Calculation FAILED - " . $e->getMessage());
+        error_log("SAW Calculation Error: " . $e->getMessage());
         return false;
     }
 }
 
-
 function getRankingByProgram($id_program, $limit = null, $onlyWithinKuota = false)
 {
     $connection = getConnection();
+    $id_program = intval($id_program);
 
     $query = "SELECT p.nama_lengkap, p.nik, p.no_hp, tn.skor_total, tn.peringkat, p.id, pb.kuota
               FROM total_nilai tn
               JOIN pengajuan p ON tn.id_pengajuan = p.id
               JOIN program_bantuan pb ON p.id_program = pb.id
-              WHERE p.status = 'Terverifikasi' AND p.id_program = " . intval($id_program) . "
+              WHERE p.status = 'Terverifikasi' AND p.id_program = $id_program
               ORDER BY tn.peringkat ASC";
 
     if ($limit) {
@@ -256,7 +250,6 @@ function getRankingByProgram($id_program, $limit = null, $onlyWithinKuota = fals
     $result = $connection->query($query);
     $rankings = $result->fetch_all(MYSQLI_ASSOC);
 
-    // ✅ Filter jika hanya yang masuk kuota
     if ($onlyWithinKuota && !empty($rankings)) {
         $kuota = $rankings[0]['kuota'];
         $rankings = array_filter($rankings, function ($r) use ($kuota) {
@@ -267,85 +260,36 @@ function getRankingByProgram($id_program, $limit = null, $onlyWithinKuota = fals
     return $rankings;
 }
 
-/**
- * ✅ Get user ranking untuk program tertentu
- */
-function getUserRankingByProgram($id_user, $id_program)
-{
-    $connection = getConnection();
-
-    $query = "SELECT tn.skor_total, tn.peringkat, p.status, pb.kuota,
-                     CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END as is_penerima
-              FROM total_nilai tn
-              JOIN pengajuan p ON tn.id_pengajuan = p.id
-              JOIN program_bantuan pb ON p.id_program = pb.id
-              WHERE p.id_user = " . intval($id_user) . " 
-              AND p.status = 'Terverifikasi'
-              AND p.id_program = " . intval($id_program);
-
-    $result = $connection->query($query);
-    return $result->fetch_assoc();
-}
-
-/**
- * ✅ Get SAW statistics per program
- */
 function getSAWStatisticsByProgram($id_program)
 {
     $connection = getConnection();
+    $id_program = intval($id_program);
 
-    $stats = [];
+    $stats = ['total_peserta' => 0, 'skor_tertinggi' => 0, 'skor_terendah' => 0, 'rata_rata' => 0];
 
-    // Total peserta
-    $result = $connection->query("SELECT COUNT(*) as total FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
-                                  WHERE p.id_program = " . intval($id_program));
-    $stats['total_peserta'] = $result->fetch_assoc()['total'];
+    $query = "SELECT COUNT(*) as total, MAX(skor_total) as max_skor, MIN(skor_total) as min_skor, AVG(skor_total) as avg_skor 
+              FROM total_nilai tn
+              JOIN pengajuan p ON tn.id_pengajuan = p.id
+              WHERE p.id_program = $id_program";
 
-    if ($stats['total_peserta'] == 0) {
-        return [
-            'total_peserta' => 0,
-            'skor_tertinggi' => 0,
-            'skor_terendah' => 0,
-            'rata_rata' => 0
-        ];
+    $result = $connection->query($query);
+    if ($row = $result->fetch_assoc()) {
+        $stats['total_peserta'] = $row['total'] ?? 0;
+        $stats['skor_tertinggi'] = $row['max_skor'] ?? 0;
+        $stats['skor_terendah'] = $row['min_skor'] ?? 0;
+        $stats['rata_rata'] = $row['avg_skor'] ?? 0;
     }
-
-    // Skor tertinggi
-    $result = $connection->query("SELECT MAX(tn.skor_total) as max_skor FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
-                                  WHERE p.id_program = " . intval($id_program));
-    $stats['skor_tertinggi'] = $result->fetch_assoc()['max_skor'] ?? 0;
-
-    // Skor terendah
-    $result = $connection->query("SELECT MIN(tn.skor_total) as min_skor FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
-                                  WHERE p.id_program = " . intval($id_program));
-    $stats['skor_terendah'] = $result->fetch_assoc()['min_skor'] ?? 0;
-
-    // Rata-rata skor
-    $result = $connection->query("SELECT AVG(tn.skor_total) as avg_skor FROM total_nilai tn 
-                                  JOIN pengajuan p ON tn.id_pengajuan = p.id
-                                  WHERE p.id_program = " . intval($id_program));
-    $stats['rata_rata'] = $result->fetch_assoc()['avg_skor'] ?? 0;
-
     return $stats;
 }
 
-/**
- * ✅ Get detail nilai kriteria untuk satu pengajuan
- */
 function getKriteriaNilai($id_pengajuan)
 {
     $connection = getConnection();
-
     $query = "SELECT * FROM pengajuan WHERE id = " . intval($id_pengajuan);
     $result = $connection->query($query);
     $data = $result->fetch_assoc();
 
-    if (!$data) {
-        return null;
-    }
+    if (!$data) return null;
 
     $formatRupiah = function ($nilai) {
         if ($nilai < 1000000) return '< Rp 1.000.000';

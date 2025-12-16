@@ -122,6 +122,12 @@ $userData = $connection->query("SELECT nama, nik FROM user WHERE id = '$id_user'
                 <span>Laporan</span>
             </a>
         </li>
+        <li>
+            <a href="recalculate_saw.php" class="<?php echo $current_page == 'recalculate_saw.php' ? 'active' : ''; ?>">
+                <i class="fas fa-sync"></i>
+                <span>Hitung Ulang SAW</span>
+            </a>
+        </li>
     </ul>
 
     <div class="sidebar-footer">

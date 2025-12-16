@@ -87,7 +87,6 @@ if ($selectedProgram) {
                     </div>
                 </div>
             <?php else: ?>
-                <!-- Program Filter -->
                 <div class="form-card">
                     <div class="row align-items-center">
                         <div class="col-md-6">
@@ -117,7 +116,6 @@ if ($selectedProgram) {
                 </div>
 
                 <?php if ($selectedProgram): ?>
-                    <!-- Program Info Banner -->
                     <div class="form-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
                         <div class="row align-items-center">
                             <div class="col-lg-8">
@@ -154,7 +152,6 @@ if ($selectedProgram) {
                         </div>
                     </div>
 
-                    <!-- Statistics -->
                     <?php if ($sawStats['total_peserta'] > 0): ?>
                         <div class="dashboard-cards">
                             <div class="dashboard-card" style="border-left: 4px solid #8b5cf6;">
@@ -195,7 +192,6 @@ if ($selectedProgram) {
                         </div>
                     <?php endif; ?>
 
-                    <!-- Ranking List -->
                     <div class="form-card">
                         <h2 class="form-section-title" style="color: #1e40af;">
                             <i class="fas fa-list-ol" style="color: #2563eb;"></i> Daftar Ranking Penerima
@@ -215,7 +211,6 @@ if ($selectedProgram) {
                                 </div>
                             </div>
                         <?php else: ?>
-                            <!-- ✅ Tampilkan SEMUA ranking (transparan) -->
                             <div class="table-responsive">
                                 <table class="table" id="rankingTable">
                                     <thead>
@@ -274,7 +269,6 @@ if ($selectedProgram) {
                                 </table>
                             </div>
 
-                            <!-- Legend -->
                             <div style="margin-top: 24px; padding: 16px; background-color: #f9fafb; border-radius: 12px; border-left: 4px solid #2563eb;">
                                 <p style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.6;">
                                     <i class="fas fa-info-circle" style="color: #2563eb; margin-right: 6px;"></i>
@@ -287,7 +281,6 @@ if ($selectedProgram) {
                 <?php endif; ?>
             <?php endif; ?>
 
-            <!-- SAW Method Info -->
             <div class="form-card">
                 <h2 class="form-section-title" style="color: #1e40af;">
                     <i class="fas fa-calculator" style="color: #2563eb;"></i> Tentang Metode SAW
