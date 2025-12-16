@@ -1,4 +1,5 @@
 <?php
+// functions/program.php
 require_once(__DIR__ . "/connection.php");
 
 // Get all programs
@@ -205,44 +206,67 @@ function canUserApplyToProgram($id_user, $id_program)
     return $row['total'] == 0;
 }
 
-// ✅ NEW FUNCTION: Check if user received aid in last 3 periods
+// ✅ IMPROVED: Check if user received aid in last 3 periods dengan error handling
 function hasReceivedInLast3Periods($id_user)
 {
-    $connection = getConnection();
+    try {
+        $connection = getConnection();
 
-    // Ambil 3 program terakhir yang sudah ditutup
-    $query = "SELECT id FROM program_bantuan 
-              WHERE status = 'Tutup' 
-              ORDER BY tanggal_selesai DESC 
-              LIMIT 3";
-    
-    $result = $connection->query($query);
-    $last3Programs = [];
-    
-    while ($row = $result->fetch_assoc()) {
-        $last3Programs[] = $row['id'];
+        // Ambil 3 program terakhir yang sudah ditutup
+        $query = "SELECT id FROM program_bantuan 
+                  WHERE status = 'Tutup' 
+                  ORDER BY tanggal_selesai DESC 
+                  LIMIT 3";
+
+        $result = $connection->query($query);
+
+        if (!$result) {
+            error_log("hasReceivedInLast3Periods: Query failed - " . $connection->error);
+            return false; // Jika query error, allow user to apply
+        }
+
+        $last3Programs = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $last3Programs[] = intval($row['id']);
+        }
+
+        if (empty($last3Programs)) {
+            error_log("hasReceivedInLast3Periods: No closed programs found, allowing application");
+            return false; // Belum ada program yang ditutup, allow apply
+        }
+
+        error_log("hasReceivedInLast3Periods: Checking user $id_user in programs: " . implode(', ', $last3Programs));
+
+        // Cek apakah user pernah menerima (masuk ranking sesuai kuota) di 3 program terakhir
+        $programIds = implode(',', $last3Programs);
+
+        $query = "SELECT COUNT(*) as total 
+                  FROM pengajuan p
+                  JOIN total_nilai tn ON p.id = tn.id_pengajuan
+                  JOIN program_bantuan pb ON p.id_program = pb.id
+                  WHERE p.id_user = " . intval($id_user) . "
+                  AND p.id_program IN ($programIds)
+                  AND p.status = 'Terverifikasi'
+                  AND tn.peringkat <= pb.kuota";
+
+        $result = $connection->query($query);
+
+        if (!$result) {
+            error_log("hasReceivedInLast3Periods: Count query failed - " . $connection->error);
+            return false; // Jika error, allow apply
+        }
+
+        $row = $result->fetch_assoc();
+        $hasReceived = $row['total'] > 0;
+
+        error_log("hasReceivedInLast3Periods: User $id_user " . ($hasReceived ? "HAS" : "has NOT") . " received aid (count: " . $row['total'] . ")");
+
+        return $hasReceived;
+    } catch (Exception $e) {
+        error_log("hasReceivedInLast3Periods: Exception - " . $e->getMessage());
+        return false; // Jika ada error, allow user to apply (fail-safe)
     }
-
-    if (empty($last3Programs)) {
-        return false; // Belum ada program yang ditutup
-    }
-
-    // Cek apakah user pernah menerima (masuk ranking sesuai kuota) di 3 program terakhir
-    $programIds = implode(',', $last3Programs);
-    
-    $query = "SELECT COUNT(*) as total 
-              FROM pengajuan p
-              JOIN total_nilai tn ON p.id = tn.id_pengajuan
-              JOIN program_bantuan pb ON p.id_program = pb.id
-              WHERE p.id_user = " . intval($id_user) . "
-              AND p.id_program IN ($programIds)
-              AND p.status = 'Terverifikasi'
-              AND tn.peringkat <= pb.kuota";
-    
-    $result = $connection->query($query);
-    $row = $result->fetch_assoc();
-
-    return $row['total'] > 0;
 }
 
 // Get program dengan jumlah penerima

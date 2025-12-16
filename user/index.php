@@ -188,7 +188,7 @@ $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->f
                                 </a>
                             <?php else: ?>
                                 <div class="d-flex justify-content-center align-items-center" style="padding: 16px; background-color: rgba(16, 185, 129, 0.1); border-radius: 12px;">
-                                    <i class="fas fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
+                                    <i class="fas fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px; margin-left: 8px;"></i>
                                     <div style="font-size: 14px; font-weight: 600; color: #065f46; ">
                                         Anda Sudah Mendaftar
                                     </div>

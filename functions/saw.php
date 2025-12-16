@@ -90,6 +90,7 @@ function calculateSAW($id_program)
     $connection = getConnection();
     $id_program = intval($id_program);
 
+    error_log("=== START SAW CALCULATION FOR PROGRAM $id_program ===");
     // 1. Ambil Data Terverifikasi (Urutkan Terbaru)
     $query = "SELECT * FROM pengajuan 
               WHERE status = 'Terverifikasi' 
@@ -105,6 +106,7 @@ function calculateSAW($id_program)
     }
 
     $rawData = $result->fetch_all(MYSQLI_ASSOC);
+    error_log("SAW INFO: Found " . count($rawData) . " verified submissions");
 
     // 2. Filter Duplikasi (Hanya ambil 1 pengajuan terbaru per User)
     $pengajuanData = [];
@@ -118,6 +120,12 @@ function calculateSAW($id_program)
         }
     }
 
+    error_log("SAW INFO: After deduplication: " . count($pengajuanData) . " unique users (skipped " . (count($rawData) - count($pengajuanData)) . " duplicates)");
+    if (empty($pengajuanData)) {
+        error_log("SAW INFO: No unique submissions after deduplication");
+        error_log("=== END SAW CALCULATION (No unique data) ===");
+        return true;
+    }
     // 3. Konversi Data
     $dataTerkonversi = [];
     foreach ($pengajuanData as $data) {
@@ -213,16 +221,28 @@ function calculateSAW($id_program)
                         SELECT id FROM pengajuan WHERE id_program = $id_program
                       )";
         $connection->query($deleteSql);
+        error_log("SAW INFO: Old data deleted for program $id_program");
 
-        // Insert data baru
-        $stmt = $connection->prepare("INSERT INTO total_nilai (id_pengajuan, skor_total, peringkat, tanggal_hitung) VALUES (?, ?, ?, NOW())");
+        // Insert data baru - GUNAKAN INSERT IGNORE untuk avoid duplicate
+        $stmt = $connection->prepare("INSERT IGNORE INTO total_nilai (id_pengajuan, skor_total, peringkat, tanggal_hitung) VALUES (?, ?, ?, NOW())");
 
+        $insertedCount = 0;
         foreach ($hasilAkhir as $hasil) {
             $stmt->bind_param("idi", $hasil['id_pengajuan'], $hasil['skor_total'], $hasil['peringkat']);
-            $stmt->execute();
+            if ($stmt->execute()) {
+                if ($stmt->affected_rows > 0) {
+                    $insertedCount++;
+                    error_log("SAW INFO: Inserted ranking #{$hasil['peringkat']} for submission {$hasil['id_pengajuan']} (score: {$hasil['skor_total']})");
+                } else {
+                    error_log("SAW WARNING: Submission {$hasil['id_pengajuan']} already exists, skipped");
+                }
+            } else {
+                error_log("SAW ERROR: Failed to insert submission {$hasil['id_pengajuan']}: " . $stmt->error);
+            }
         }
 
         $connection->commit();
+        error_log("SAW SUCCESS: Transaction committed, inserted $insertedCount records");
         return true;
     } catch (Exception $e) {
         $connection->rollback();
