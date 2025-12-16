@@ -174,8 +174,8 @@ $programs = getAllPrograms();
                                     <th>ID</th>
                                     <th>Nama Program</th>
                                     <th>Periode</th>
-                                    <th>Kuota</th>
                                     <th>Penerima</th>
+                                    <th>Pendaftar</th>
                                     <th>Status</th>
                                     <th>Aksi</th>
                                 </tr>

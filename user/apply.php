@@ -24,13 +24,13 @@ if (!$activeProgram) {
 
 if ($activeProgram && hasReceivedInLast3Periods($id_user)) {
     $error = "Anda tidak dapat mendaftar karena sudah menerima bantuan dalam 3 periode terakhir. Silakan tunggu hingga periode berikutnya.";
-    $activeProgram = null; // Set null agar form tidak ditampilkan
+    $activeProgram = null;
 }
 
-// Cek apakah sudah ada pengajuan yang sedang diproses untuk program aktif
+// ✅ FIX: Cek apakah sudah ada pengajuan UNTUK PROGRAM AKTIF INI
 if ($activeProgram) {
-    $currentPengajuan = getPengajuanStatus($id_user);
-    if ($currentPengajuan && $currentPengajuan['status'] != 'Ditolak' && $currentPengajuan['id_program'] == $activeProgram['id']) {
+    $currentPengajuan = getPengajuanStatus($id_user, $activeProgram['id']); // ← TAMBAHKAN PARAMETER
+    if ($currentPengajuan && $currentPengajuan['status'] != 'Ditolak') {
         header("Location: submission_status.php");
         exit;
     }
@@ -38,7 +38,6 @@ if ($activeProgram) {
 
 // Proses form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
-    // Validasi
     if (!$activeProgram) {
         $error = "Tidak ada program aktif untuk pengajuan.";
     } elseif (!validateNIK($_POST['nik'])) {
@@ -46,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
     } elseif (!validatePhoneNumber($_POST['no_hp'])) {
         $error = "Nomor HP tidak valid.";
     } else {
-        // MODIFIED: Pass id_program to createPengajuan
         $_POST['id_program'] = $activeProgram['id'];
         $result = createPengajuan($_POST, $_FILES);
         if ($result) {
@@ -70,7 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
@@ -245,11 +245,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
             <?php endif; ?>
 
             <?php if ($activeProgram): ?>
-                <div class="form-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white;">
+                <div class="form-card"
+                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white;">
                     <div class="row align-items-center">
                         <div class="col-lg-8">
                             <div style="display: flex; align-items: start; gap: 20px;">
-                                <div style="width: 64px; height: 64px; background: rgba(255, 255, 255, 0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0;">
+                                <div
+                                    style="width: 64px; height: 64px; background: rgba(255, 255, 255, 0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0;">
                                     <i class="fas fa-clipboard-check"></i>
                                 </div>
                                 <div>
@@ -263,22 +265,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                                     <?php endif; ?>
                                     <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px;">
                                         <div>
-                                            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Periode Program</div>
+                                            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Periode Program
+                                            </div>
                                             <div style="font-size: 14px; font-weight: 600;">
                                                 <?php echo date('d M Y', strtotime($activeProgram['tanggal_mulai'])); ?> -
                                                 <?php echo date('d M Y', strtotime($activeProgram['tanggal_selesai'])); ?>
                                             </div>
                                         </div>
                                         <div>
-                                            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Kuota Penerima</div>
-                                            <div style="font-size: 14px; font-weight: 600;"><?php echo $activeProgram['kuota']; ?> Orang</div>
+                                            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Kuota Penerima
+                                            </div>
+                                            <div style="font-size: 14px; font-weight: 600;">
+                                                <?php echo $activeProgram['kuota']; ?> Orang
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-4" style="text-align: right;">
-                            <div style="background: rgba(255, 255, 255, 0.2); padding: 16px; border-radius: 12px; display: inline-block;">
+                            <div
+                                style="background: rgba(255, 255, 255, 0.2); padding: 16px; border-radius: 12px; display: inline-block;">
                                 <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Status Program</div>
                                 <div style="font-size: 18px; font-weight: 700;">
                                     <i class="fas fa-check-circle"></i> AKTIF
@@ -297,7 +304,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                         </div>
                         <div class="empty-state-title">Tidak Ada Program Aktif</div>
                         <div class="empty-state-description">
-                            Saat ini belum ada program bantuan yang dibuka. Silakan kembali lagi nanti atau hubungi admin untuk informasi lebih lanjut.
+                            Saat ini belum ada program bantuan yang dibuka. Silakan kembali lagi nanti atau hubungi admin
+                            untuk informasi lebih lanjut.
                         </div>
                         <a href="index.php" class="btn btn-primary" style="margin-top: 24px;">
                             <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
@@ -377,8 +385,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
 
                             <div class="form-group">
                                 <label class="form-label">Nomor HP <span class="required">*</span></label>
-                                <input type="text" name="no_hp" class="form-control" required pattern="[0-9]{10,15}"
-                                    placeholder="Contoh: 081234567890">
+                                <input type="text" name="no_hp" class="form-control" required pattern="[0-9]{10,13}"
+                                    autofocus placeholder="Contoh: 081234567890">
                                 <small class="form-text">Nomor HP yang dapat dihubungi</small>
                             </div>
 
@@ -399,7 +407,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form-label">Penghasilan per Bulan <span class="required">*</span></label>
+                                        <label class="form-label">Penghasilan per Bulan <span
+                                                class="required">*</span></label>
                                         <select name="gaji" class="form-select" required>
                                             <option value="">Pilih Range Penghasilan</option>
                                             <option value="500000">
@@ -414,7 +423,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
 
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form-label">Pengeluaran per Bulan <span class="required">*</span></label>
+                                        <label class="form-label">Pengeluaran per Bulan <span
+                                                class="required">*</span></label>
                                         <select name="pengeluaran" class="form-select" required>
                                             <option value="">Pilih Range Pengeluaran</option>
                                             <option value="500000">
@@ -478,7 +488,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form-label">Jumlah Anggota Keluarga <span class="required">*</span></label>
+                                        <label class="form-label">Jumlah Anggota Keluarga <span
+                                                class="required">*</span></label>
                                         <select name="jml_keluarga" class="form-select" required>
                                             <option value="">Pilih Jumlah Anggota</option>
                                             <option value="1">1 - 2 orang</option>
@@ -493,7 +504,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
 
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form-label">Keberadaan Anak Usia Sekolah <span class="required">*</span></label>
+                                        <label class="form-label">Keberadaan Anak Usia Sekolah <span
+                                                class="required">*</span></label>
                                         <select name="jml_anak_sekolah" class="form-select" required>
                                             <option value="">Pilih Jumlah Anak Sekolah</option>
                                             <option value="0">Tidak ada</option>
@@ -549,7 +561,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                                         </div>
                                         <div class="file-upload-text">
                                             <strong>Klik untuk upload KTP</strong>
-                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)
+                                            </div>
                                         </div>
                                         <input type="file" name="ktp" id="ktp" accept="image/*,application/pdf" required
                                             style="display: none;" onchange="handleFileSelect(this, 'ktp')">
@@ -568,7 +581,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                                         </div>
                                         <div class="file-upload-text">
                                             <strong>Klik untuk upload Kartu Keluarga</strong>
-                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)
+                                            </div>
                                         </div>
                                         <input type="file" name="kk" id="kk" accept="image/*,application/pdf" required
                                             style="display: none;" onchange="handleFileSelect(this, 'kk')">
@@ -587,7 +601,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                                         </div>
                                         <div class="file-upload-text">
                                             <strong>Klik untuk upload Slip Gaji</strong>
-                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)
+                                            </div>
                                         </div>
                                         <input type="file" name="slip_gaji" id="slip_gaji" accept="image/*,application/pdf"
                                             style="display: none;" onchange="handleFileSelect(this, 'slip_gaji')">
@@ -619,13 +634,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                                         <i class="fas fa-file-alt" style="color: #ef4444; margin-right: 6px;"></i>
                                         Surat Keterangan Rumah <span class="optional-badge">OPSIONAL</span>
                                     </label>
-                                    <label for="surat_keterangan_rumah" class="custom-file-upload" id="surat_keterangan_rumah-label">
+                                    <label for="surat_keterangan_rumah" class="custom-file-upload"
+                                        id="surat_keterangan_rumah-label">
                                         <div class="file-upload-icon">
                                             <i class="fas fa-cloud-upload-alt"></i>
                                         </div>
                                         <div class="file-upload-text">
                                             <strong>Klik untuk upload Surat Keterangan</strong>
-                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)
+                                            </div>
                                         </div>
                                         <input type="file" name="surat_keterangan_rumah" id="surat_keterangan_rumah"
                                             accept="image/*,application/pdf" style="display: none;"
@@ -645,7 +662,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                                         </div>
                                         <div class="file-upload-text">
                                             <strong>Klik untuk upload Rekening Listrik</strong>
-                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)</div>
+                                            <div style="font-size: 12px; margin-top: 4px;">JPG, PNG, atau PDF (Max. 2MB)
+                                            </div>
                                         </div>
                                         <input type="file" name="rekening_listrik" id="rekening_listrik"
                                             accept="image/*,application/pdf" style="display: none;"
@@ -661,7 +679,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <div>
                                     <strong>Perhatian!</strong>
-                                    <p style="margin: 5px 0 0 0;">Pastikan semua data yang Anda masukkan sudah benar sebelum dikirim.</p>
+                                    <p style="margin: 5px 0 0 0;">Pastikan semua data yang Anda masukkan sudah benar sebelum
+                                        dikirim.</p>
                                 </div>
                             </div>
 
@@ -782,7 +801,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_pengajuan'])) {
                     input.classList.add('is-invalid'); // Tambah border merah bootstrap
 
                     // Hapus merah saat user mulai mengetik/memilih
-                    input.addEventListener('input', function() {
+                    input.addEventListener('input', function () {
                         this.classList.remove('is-invalid');
                     });
                 } else {

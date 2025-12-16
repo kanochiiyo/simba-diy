@@ -60,7 +60,8 @@ include($projectRoot . '/templates/header.php');
                 <label for="nik" style="display: block; font-size: 14px; font-weight: 600; color: var(--color-text); margin-bottom: 8px;">
                     NIK
                 </label>
-                <input type="text" name="nik" id="nik" placeholder="Masukkan NIK" required autofocus>
+                 <input type="text" name="nik" id="nik" placeholder="Masukkan NIK" required maxlength="16"
+                    pattern="\d{16}" autofocus>
             </div>
 
             <div class="input-group password-wrapper">
