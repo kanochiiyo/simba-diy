@@ -1,7 +1,7 @@
 <?php
 require_once(__DIR__ . "/connection.php");
 require_once(__DIR__ . "/saw.php");
-require_once(__DIR__ . "/program.php"); // Wajib untuk validasi program
+require_once(__DIR__ . "/program.php");
 
 /* ======================================================
    UPLOAD HELPER
@@ -82,7 +82,7 @@ function createPengajuan($formData, $files)
         return false;
     }
 
-    // Validasi 1 user = 1 pengajuan per program (sudah FINAL)
+    // Validasi 1 user = 1 pengajuan per program
     if (!canUserApplyToProgram($id, $id_program)) {
         echo "<script>alert('Anda tidak dapat mendaftar pada program ini.');</script>";
         return false;
@@ -166,7 +166,7 @@ function createPengajuan($formData, $files)
 }
 
 /* ======================================================
-   STATUS & VERIFIKASI
+   STATUS & VERIFIKASI - NO AUTO SAW TRIGGER
 ====================================================== */
 function updatePengajuanStatus($id_pengajuan, $new_status, $id_petugas = null, $catatan = null)
 {
@@ -181,6 +181,7 @@ function updatePengajuanStatus($id_pengajuan, $new_status, $id_petugas = null, $
         "UPDATE pengajuan SET status = '$new_status' WHERE id = " . intval($id_pengajuan)
     );
 
+    // ✅ HANYA simpan verifikasi, TIDAK trigger SAW
     if (($new_status == 'Terverifikasi' || $new_status == 'Ditolak') && $id_petugas) {
         $status_verifikasi = $new_status == 'Terverifikasi' ? 'Layak' : 'Tidak Layak';
         $catatan = mysqli_real_escape_string($connection, $catatan);
@@ -195,10 +196,8 @@ function updatePengajuanStatus($id_pengajuan, $new_status, $id_petugas = null, $
              '$catatan')
         ");
 
-        // 🔥 TRIGGER SAW (FINAL: TANPA DEDUP)
-        if ($new_status == 'Terverifikasi' && $pengajuan) {
-            calculateSAW($pengajuan['id_program']);
-        }
+        // ✅ LOG: SAW akan dihitung saat program ditutup
+        error_log("[SUBMISSION] User verified - SAW will calculate when program closes (Program ID: {$pengajuan['id_program']})");
     }
 
     return true;

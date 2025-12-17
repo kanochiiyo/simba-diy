@@ -1,9 +1,1143 @@
-[2025-12-17 00:04:57][INFO] START SAW PROGRAM 5
-[2025-12-17 00:04:57][INFO] TOTAL ALTERNATIF: 3
-[2025-12-17 00:04:57][ERROR] SAW ERROR: Duplicate entry '5-16' for key 'uniq_program_pengajuan'
-[2025-12-17 00:07:37][INFO] START SAW PROGRAM 5
-[2025-12-17 00:07:37][INFO] TOTAL ALTERNATIF: 3
-[2025-12-17 00:07:37][ERROR] SAW ERROR: Duplicate entry '5-16' for key 'uniq_program_pengajuan'
-[2025-12-17 00:11:46][INFO] START SAW PROGRAM 5
-[2025-12-17 00:11:46][INFO] TOTAL ALTERNATIF: 3
-[2025-12-17 00:11:46][ERROR] SAW ERROR: Duplicate entry '5-16' for key 'uniq_program_pengajuan'
+[2025-12-17 10:11:10][INFO] ========== START SAW PROGRAM 8 ==========
+[2025-12-17 10:11:10][INFO] Pre-cleanup: deleted 0 old records
+[2025-12-17 10:11:10][INFO] TOTAL VERIFIED USERS: 2
+[2025-12-17 10:11:10][INFO] Conversion completed
+[2025-12-17 10:11:10][INFO] Min/Max calculated
+[2025-12-17 10:11:10][INFO] Normalization completed
+[2025-12-17 10:11:10][INFO] SAW scores calculated
+[2025-12-17 10:11:10][INFO] Ranking assigned (1 to 2)
+[2025-12-17 10:11:10][INFO] ✓ Saved pengajuan 29 - Rank 1 - Score 0.9400
+[2025-12-17 10:11:10][INFO] ✓ Saved pengajuan 29 - Rank 1 - Score 0.9400
+[2025-12-17 10:11:10][INFO] Successfully saved 2 records
+[2025-12-17 10:11:10][INFO] ========== SAW SUCCESS PROGRAM 8 ==========
+[2025-12-17 10:18:27][INFO] ========== START SAW PROGRAM 9 ==========
+[2025-12-17 10:18:27][INFO] Pre-cleanup: deleted 0 old records
+[2025-12-17 10:18:27][INFO] TOTAL VERIFIED USERS: 2
+[2025-12-17 10:18:27][INFO] Conversion completed
+[2025-12-17 10:18:27][INFO] Min/Max calculated
+[2025-12-17 10:18:27][INFO] Normalization completed
+[2025-12-17 10:18:27][INFO] SAW scores calculated
+[2025-12-17 10:18:27][INFO] Ranking assigned (1 to 2)
+[2025-12-17 10:18:27][INFO] ✓ Saved pengajuan 32 - Rank 1 - Score 0.9250
+[2025-12-17 10:18:27][INFO] ✓ Saved pengajuan 32 - Rank 1 - Score 0.9250
+[2025-12-17 10:18:27][INFO] Successfully saved 2 records
+[2025-12-17 10:18:27][INFO] ========== SAW SUCCESS PROGRAM 9 ==========
+[2025-12-17 10:21:38][INFO] ========== START SAW PROGRAM 9 ==========
+[2025-12-17 10:21:38][INFO] Pre-cleanup: deleted 0 old records
+[2025-12-17 10:21:38][INFO] TOTAL VERIFIED USERS: 2
+[2025-12-17 10:21:38][INFO] Conversion completed
+[2025-12-17 10:21:38][INFO] Min/Max calculated
+[2025-12-17 10:21:38][INFO] Normalization completed
+[2025-12-17 10:21:38][INFO] SAW scores calculated
+[2025-12-17 10:21:38][INFO] Ranking assigned (1 to 2)
+[2025-12-17 10:21:38][INFO] ✓ Saved pengajuan 32 - Rank 1 - Score 0.9250
+[2025-12-17 10:21:38][INFO] ✓ Saved pengajuan 32 - Rank 1 - Score 0.9250
+[2025-12-17 10:21:38][INFO] Successfully saved 2 records
+[2025-12-17 10:21:38][INFO] ========== SAW SUCCESS PROGRAM 9 ==========
+[2025-12-17 10:26:48][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 10:26:48][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 10:26:48][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:26:48][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 10:26:48][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 10:26:55][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 10:26:55][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 10:26:55][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:26:55][DEBUG][SQL_META] Array
+(
+    [num_rows] => 1
+    [affected_rows] => 1
+)
+
+[2025-12-17 10:26:55][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 10:27:37][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 7
+    [limit_raw] => 
+)
+
+[2025-12-17 10:27:37][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 7
+    [limit] => 
+)
+
+[2025-12-17 10:27:37][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 7
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:27:37][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 10:27:37][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 10:30:05][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 10:30:05][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 10:30:05][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:30:05][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 10:30:05][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 10:30:09][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 10:30:09][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 10:30:09][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:30:09][DEBUG][SQL_META] Array
+(
+    [num_rows] => 1
+    [affected_rows] => 1
+)
+
+[2025-12-17 10:30:09][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 10:49:59][INFO] ========== START SAW PROGRAM 9 ==========
+[2025-12-17 10:49:59][INFO] Old SAW data cleaned
+[2025-12-17 10:49:59][INFO] TOTAL VERIFIED SUBMISSIONS: 2
+[2025-12-17 10:49:59][INFO] ========== SAW SUCCESS PROGRAM 9 ==========
+[2025-12-17 10:50:31][INFO] ========== START SAW PROGRAM 9 ==========
+[2025-12-17 10:50:31][INFO] Old SAW data cleaned
+[2025-12-17 10:50:31][INFO] TOTAL VERIFIED SUBMISSIONS: 2
+[2025-12-17 10:50:31][INFO] ========== SAW SUCCESS PROGRAM 9 ==========
+[2025-12-17 10:52:20][INFO] ========== START SAW PROGRAM 9 ==========
+[2025-12-17 10:52:20][INFO] Old SAW data cleaned
+[2025-12-17 10:52:20][INFO] TOTAL VERIFIED SUBMISSIONS: 2
+[2025-12-17 10:52:20][INFO] ========== SAW SUCCESS PROGRAM 9 ==========
+[2025-12-17 10:52:52][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 10:52:52][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 10:52:52][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:52:52][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 10:52:52][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 10:52:56][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 10:52:56][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 10:52:56][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:52:56][DEBUG][SQL_META] Array
+(
+    [num_rows] => 2
+    [affected_rows] => 2
+)
+
+[2025-12-17 10:52:56][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 10:58:37][INFO] ========== START SAW PROGRAM 9 ==========
+[2025-12-17 10:58:37][INFO] Old total_nilai deleted for program 9
+[2025-12-17 10:58:37][INFO] TOTAL VERIFIED ALTERNATIVES: 2
+[2025-12-17 10:58:37][INFO] INSERT id_pengajuan=32 rank=1 score=0.925
+[2025-12-17 10:58:37][INFO] INSERT id_pengajuan=32 rank=1 score=0.925
+[2025-12-17 10:58:37][ERROR] SAW ERROR: Duplicate entry '9-32' for key 'uniq_program_pengajuan'
+[2025-12-17 10:58:37][ERROR] #0 /opt/lampp/htdocs/simba-diy/functions/saw.php(205): mysqli_stmt->execute()
+#1 /opt/lampp/htdocs/simba-diy/admin/recalculate_saw.php(48): calculateSAW(9)
+#2 {main}
+[2025-12-17 10:58:49][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 10:58:49][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 10:58:49][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:58:49][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 10:58:49][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 10:58:53][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 10:58:53][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 10:58:53][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 10:58:53][DEBUG][SQL_META] Array
+(
+    [num_rows] => 1
+    [affected_rows] => 1
+)
+
+[2025-12-17 10:58:53][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 11:03:50][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 11:03:50][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 11:03:50][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:03:50][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 11:03:50][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 11:03:54][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 11:03:54][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 11:03:54][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:03:54][DEBUG][SQL_META] Array
+(
+    [num_rows] => 1
+    [affected_rows] => 1
+)
+
+[2025-12-17 11:03:54][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 11:04:05][INFO] ========== START SAW PROGRAM 9 ==========
+[2025-12-17 11:04:05][INFO] Old total_nilai cleaned
+[2025-12-17 11:04:05][INFO] TOTAL VERIFIED USERS: 2
+[2025-12-17 11:04:05][INFO] VERIFIED IDS: 31, 32
+[2025-12-17 11:04:05][INFO] ✓ Saved pengajuan 32 rank 1
+[2025-12-17 11:04:05][INFO] ✓ Saved pengajuan 32 rank 1
+[2025-12-17 11:04:05][INFO] ========== SAW SUCCESS PROGRAM 9 ==========
+[2025-12-17 11:04:14][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 11:04:14][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 11:04:14][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:04:14][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 11:04:14][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 11:04:17][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 11:04:17][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 11:04:17][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:04:17][DEBUG][SQL_META] Array
+(
+    [num_rows] => 1
+    [affected_rows] => 1
+)
+
+[2025-12-17 11:04:17][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 11:07:09][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 11:07:09][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 11:07:09][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:07:09][DEBUG][SQL_META] Array
+(
+    [num_rows] => 1
+    [affected_rows] => 1
+)
+
+[2025-12-17 11:07:09][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 11:07:18][INFO] START SAW PROGRAM 9
+[2025-12-17 11:07:18][INFO] TOTAL VERIFIED: 2
+[2025-12-17 11:07:18][INFO] IDS: 31, 32
+[2025-12-17 11:07:18][INFO] INSERTED pengajuan 32
+[2025-12-17 11:07:18][INFO] INSERTED pengajuan 31
+[2025-12-17 11:07:18][INFO] SAW SUCCESS PROGRAM 9
+[2025-12-17 11:07:23][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 11:07:23][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 11:07:23][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:07:23][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 11:07:23][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 11:07:27][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 9
+    [limit_raw] => 
+)
+
+[2025-12-17 11:07:27][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 9
+    [limit] => 
+)
+
+[2025-12-17 11:07:27][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 9
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:07:27][DEBUG][SQL_META] Array
+(
+    [num_rows] => 2
+    [affected_rows] => 2
+)
+
+[2025-12-17 11:07:27][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 32
+            [id_user] => 9
+            [nama_lengkap] => JAMES SIREGAR
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9250
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 31
+            [id_user] => 10
+            [nama_lengkap] => GOJO SATORUe
+            [nik] => 1122112211221122
+            [no_hp] => 0812345678333
+            [skor_total] => 0.8792
+            [peringkat] => 2
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+)
+
+[2025-12-17 11:08:15][INFO] START SAW PROGRAM 7
+[2025-12-17 11:08:15][INFO] TOTAL VERIFIED: 3
+[2025-12-17 11:08:15][INFO] IDS: 25, 26, 27
+[2025-12-17 11:08:15][INFO] INSERTED pengajuan 27
+[2025-12-17 11:08:15][INFO] INSERTED pengajuan 26
+[2025-12-17 11:08:15][INFO] INSERTED pengajuan 25
+[2025-12-17 11:08:15][INFO] SAW SUCCESS PROGRAM 7
+[2025-12-17 11:08:19][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 11:08:19][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 11:08:19][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:08:19][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 11:08:19][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 11:08:23][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 7
+    [limit_raw] => 
+)
+
+[2025-12-17 11:08:23][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 7
+    [limit] => 
+)
+
+[2025-12-17 11:08:23][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 7
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:08:23][DEBUG][SQL_META] Array
+(
+    [num_rows] => 3
+    [affected_rows] => 3
+)
+
+[2025-12-17 11:08:23][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 27
+            [id_user] => 11
+            [nama_lengkap] => GOJO SATORU
+            [nik] => 1133113311331133
+            [no_hp] => 081234567890
+            [skor_total] => 0.8833
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 26
+            [id_user] => 10
+            [nama_lengkap] => sementara
+            [nik] => 1122112211221122
+            [no_hp] => 081234567890
+            [skor_total] => 0.8425
+            [peringkat] => 2
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [2] => Array
+        (
+            [id] => 25
+            [id_user] => 9
+            [nama_lengkap] => rake
+            [nik] => 1234123412341234
+            [no_hp] => 0812564376437
+            [skor_total] => 0.7550
+            [peringkat] => 3
+            [kuota] => 2
+            [is_penerima] => 0
+        )
+
+)
+
+[2025-12-17 11:09:31][INFO] START SAW PROGRAM 6
+[2025-12-17 11:09:31][INFO] TOTAL VERIFIED: 3
+[2025-12-17 11:09:31][INFO] IDS: 22, 23, 24
+[2025-12-17 11:09:31][INFO] INSERTED pengajuan 23
+[2025-12-17 11:09:31][INFO] INSERTED pengajuan 24
+[2025-12-17 11:09:31][INFO] INSERTED pengajuan 22
+[2025-12-17 11:09:31][INFO] SAW SUCCESS PROGRAM 6
+[2025-12-17 11:09:46][INFO] START SAW PROGRAM 8
+[2025-12-17 11:09:46][INFO] TOTAL VERIFIED: 2
+[2025-12-17 11:09:46][INFO] IDS: 28, 29
+[2025-12-17 11:09:46][INFO] INSERTED pengajuan 29
+[2025-12-17 11:09:46][INFO] INSERTED pengajuan 28
+[2025-12-17 11:09:46][INFO] SAW SUCCESS PROGRAM 8
+[2025-12-17 11:09:52][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 5
+    [limit_raw] => 
+)
+
+[2025-12-17 11:09:52][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 5
+    [limit] => 
+)
+
+[2025-12-17 11:09:52][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 5
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:09:52][DEBUG][SQL_META] Array
+(
+    [num_rows] => 0
+    [affected_rows] => 0
+)
+
+[2025-12-17 11:09:52][DEBUG][RESULT_DATA] Array
+(
+)
+
+[2025-12-17 11:09:55][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 6
+    [limit_raw] => 
+)
+
+[2025-12-17 11:09:55][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 6
+    [limit] => 
+)
+
+[2025-12-17 11:09:55][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 6
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:09:55][DEBUG][SQL_META] Array
+(
+    [num_rows] => 3
+    [affected_rows] => 3
+)
+
+[2025-12-17 11:09:55][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 23
+            [id_user] => 8
+            [nama_lengkap] => GOJO SATORU
+            [nik] => 1231231231231231
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9000
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 24
+            [id_user] => 7
+            [nama_lengkap] => LEE HEESEUNG
+            [nik] => 4444444444444444
+            [no_hp] => 0812564376437
+            [skor_total] => 0.6450
+            [peringkat] => 2
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [2] => Array
+        (
+            [id] => 22
+            [id_user] => 4
+            [nama_lengkap] => EOM SEONGHYEON
+            [nik] => 1111111111111111
+            [no_hp] => 0812564376437
+            [skor_total] => 0.5750
+            [peringkat] => 3
+            [kuota] => 2
+            [is_penerima] => 0
+        )
+
+)
+
+[2025-12-17 11:10:00][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 8
+    [limit_raw] => 
+)
+
+[2025-12-17 11:10:00][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 8
+    [limit] => 
+)
+
+[2025-12-17 11:10:00][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 8
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:10:00][DEBUG][SQL_META] Array
+(
+    [num_rows] => 2
+    [affected_rows] => 2
+)
+
+[2025-12-17 11:10:00][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 29
+            [id_user] => 6
+            [nama_lengkap] => MARTIN WIJAYA
+            [nik] => 3333333333333333
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9400
+            [peringkat] => 1
+            [kuota] => 1
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 28
+            [id_user] => 4
+            [nama_lengkap] => EOM SEONGHYEON
+            [nik] => 1111111111111111
+            [no_hp] => 081234567890
+            [skor_total] => 0.7583
+            [peringkat] => 2
+            [kuota] => 1
+            [is_penerima] => 0
+        )
+
+)
+

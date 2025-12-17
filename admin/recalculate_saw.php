@@ -211,7 +211,7 @@ $programs = getAllPrograms();
 
                     // Cek sinkronisasi berdasarkan USER
                     $isSync = $debugData['total_user_verified'] == $debugData['total_user_ranked'];
-                ?>
+                    ?>
                     <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 12px;">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">
                             <?php echo htmlspecialchars($prog['nama_program']); ?>
