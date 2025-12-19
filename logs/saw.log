@@ -1141,3 +1141,211 @@
 
 )
 
+[2025-12-17 11:12:49][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 8
+    [limit_raw] => 
+)
+
+[2025-12-17 11:12:49][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 8
+    [limit] => 
+)
+
+[2025-12-17 11:12:49][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 8
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:12:49][DEBUG][SQL_META] Array
+(
+    [num_rows] => 2
+    [affected_rows] => 2
+)
+
+[2025-12-17 11:12:49][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 29
+            [id_user] => 6
+            [nama_lengkap] => MARTIN WIJAYA
+            [nik] => 3333333333333333
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9400
+            [peringkat] => 1
+            [kuota] => 1
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 28
+            [id_user] => 4
+            [nama_lengkap] => EOM SEONGHYEON
+            [nik] => 1111111111111111
+            [no_hp] => 081234567890
+            [skor_total] => 0.7583
+            [peringkat] => 2
+            [kuota] => 1
+            [is_penerima] => 0
+        )
+
+)
+
+[2025-12-17 11:17:31][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 8
+    [limit_raw] => 
+)
+
+[2025-12-17 11:17:31][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 8
+    [limit] => 
+)
+
+[2025-12-17 11:17:31][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 8
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:17:31][DEBUG][SQL_META] Array
+(
+    [num_rows] => 2
+    [affected_rows] => 2
+)
+
+[2025-12-17 11:17:31][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 29
+            [id_user] => 6
+            [nama_lengkap] => MARTIN WIJAYA
+            [nik] => 3333333333333333
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9400
+            [peringkat] => 1
+            [kuota] => 1
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 28
+            [id_user] => 4
+            [nama_lengkap] => EOM SEONGHYEON
+            [nik] => 1111111111111111
+            [no_hp] => 081234567890
+            [skor_total] => 0.7583
+            [peringkat] => 2
+            [kuota] => 1
+            [is_penerima] => 0
+        )
+
+)
+
+[2025-12-17 11:17:36][DEBUG][INPUT_RAW] Array
+(
+    [id_program_raw] => 6
+    [limit_raw] => 
+)
+
+[2025-12-17 11:17:36][DEBUG][INPUT_CASTED] Array
+(
+    [id_program] => 6
+    [limit] => 
+)
+
+[2025-12-17 11:17:36][DEBUG][SQL_QUERY] 
+        SELECT 
+            p.id,
+            p.id_user,
+            p.nama_lengkap,
+            p.nik,
+            p.no_hp,
+            tn.skor_total,
+            tn.peringkat,
+            pb.kuota,
+            CASE WHEN tn.peringkat <= pb.kuota THEN 1 ELSE 0 END AS is_penerima
+        FROM total_nilai tn
+        JOIN pengajuan p ON tn.id_pengajuan = p.id
+        JOIN program_bantuan pb ON tn.id_program = pb.id
+        WHERE tn.id_program = 6
+        ORDER BY tn.peringkat ASC
+    
+[2025-12-17 11:17:36][DEBUG][SQL_META] Array
+(
+    [num_rows] => 3
+    [affected_rows] => 3
+)
+
+[2025-12-17 11:17:36][DEBUG][RESULT_DATA] Array
+(
+    [0] => Array
+        (
+            [id] => 23
+            [id_user] => 8
+            [nama_lengkap] => GOJO SATORU
+            [nik] => 1231231231231231
+            [no_hp] => 0812564376437
+            [skor_total] => 0.9000
+            [peringkat] => 1
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [1] => Array
+        (
+            [id] => 24
+            [id_user] => 7
+            [nama_lengkap] => LEE HEESEUNG
+            [nik] => 4444444444444444
+            [no_hp] => 0812564376437
+            [skor_total] => 0.6450
+            [peringkat] => 2
+            [kuota] => 2
+            [is_penerima] => 1
+        )
+
+    [2] => Array
+        (
+            [id] => 22
+            [id_user] => 4
+            [nama_lengkap] => EOM SEONGHYEON
+            [nik] => 1111111111111111
+            [no_hp] => 0812564376437
+            [skor_total] => 0.5750
+            [peringkat] => 3
+            [kuota] => 2
+            [is_penerima] => 0
+        )
+
+)
+

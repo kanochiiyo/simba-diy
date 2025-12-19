@@ -18,7 +18,7 @@ $userRanking = getUserRanking($id_user);
 
 // ✅ FIX: Ambil pengajuan untuk SEMUA program (riwayat)
 $currentPengajuan = getPengajuanStatus($id_user);
-$hasRestriction = hasReceivedInLast3Periods($id_user);
+// $hasRestriction = hasReceivedInLast3Periods($id_user);
 
 // ✅ FIX: Ambil active program & cek apakah user sudah daftar di program INI
 $activeProgram = getActiveProgram();
@@ -76,19 +76,6 @@ $userData = $connection->query("SELECT nama FROM user WHERE id = '$id_user'")->f
                         pengajuan bantuan Anda dengan mudah dan transparan.</p>
                 </div>
             </div>
-            <?php if ($hasRestriction): ?>
-                <div class="alert" style="background-color: #fef3c7; border-color: #fde68a; color: #92400e;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <div>
-                        <strong>Informasi Pembatasan Periode</strong>
-                        <p style="margin: 8px 0 0 0;">
-                            Anda sudah menerima bantuan dalam 3 periode terakhir. Anda tidak dapat mendaftar program baru
-                            sampai periode berikutnya tersedia.
-                        </p>
-                    </div>
-                </div>
-            <?php endif; ?>
-
             <?php if ($activeProgram): ?>
                 <div class="alert"
                     style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-color: #6ee7b7; color: #065f46;">
